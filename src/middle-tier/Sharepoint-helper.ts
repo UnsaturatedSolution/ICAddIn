@@ -102,4 +102,36 @@ export async function UpdateRequestSP(req, next, res) {
           });
     });
 }
+export async function GetListData(req: any, res: any) {
+  try {
+    /*  console.log('req' + JSON.stringify(req) + 'res' + JSON.stringify(res)); */
+    let filterQuery = req.get("searchText");
+    console.log('querytext' + filterQuery);
+    spauth
+      .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
+        clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
+        clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
+        realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
+      })
+      .then((options) => {
+        //perform request with any http-enabled library (request-promise in a sample below):
+        let headers = options.headers;
+        headers["Accept"] = "application/json;odata=verbose";
+        request
+          .get({
+            url: `https://vichitra.sharepoint.com/sites/dev/_api/web/lists/getbyTitle('InvestcorpDocumentAssignees')/items?$select=*,PrimaryOwner/Title,SecondaryOwner/Title&$expand=PrimaryOwner,SecondaryOwner&$filter=` + filterQuery,
+            headers: headers,
+            method: "GET",
+          })
+          .then((response) => {
+            // console.log('Get List Data in Sharepoint-helper' + response);
 
+            res.send(response);
+          });
+      });
+  }
+  catch (err) {
+    console.log(err);
+    throw err;
+  }
+}

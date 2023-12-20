@@ -68,7 +68,7 @@ export async function CreateRequest(middletierToken: string, createItem): Promis
     const response = await $.ajax({
       type: "POST",
       url: `/CreateRequest`,
-      headers: { Authorization: "Bearer " + middletierToken,Data:JSON.stringify(createItem) },
+      headers: { Authorization: "Bearer " + middletierToken, Data: JSON.stringify(createItem) },
       cache: false,
     });
     return response;
@@ -77,12 +77,12 @@ export async function CreateRequest(middletierToken: string, createItem): Promis
     throw err;
   }
 }
-export async function UpdateRequest(middletierToken: string, createItem,itemID): Promise<any> {
+export async function UpdateRequest(middletierToken: string, createItem, itemID): Promise<any> {
   try {
     const response = await $.ajax({
       type: "POST",
       url: `/UpdateRequest`,
-      headers: { Authorization: "Bearer " + middletierToken,Data:JSON.stringify(createItem),Itemid:`${itemID}` },
+      headers: { Authorization: "Bearer " + middletierToken, Data: JSON.stringify(createItem), Itemid: `${itemID}` },
       cache: false,
     });
     return response;
@@ -96,7 +96,23 @@ export async function DeleteRequest(middletierToken: string, itemID): Promise<an
     const response = await $.ajax({
       type: "POST",
       url: `/DeleteRequest`,
-      headers: { Authorization: "Bearer " + middletierToken,Itemid:`${itemID}` },
+      headers: { Authorization: "Bearer " + middletierToken, Itemid: `${itemID}` },
+      cache: false,
+    });
+    return response;
+  } catch (err) {
+    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+    throw err;
+  }
+}
+export async function GetListData(middletierToken: string, searchText: string, listname: string): Promise<any> {
+  try {
+    console.log('quuery string in middle tier' + searchText);
+    console.log('quuery string in middle tier listname' + listname);
+    const response = await $.ajax({
+      type: "GET",
+      url: `/GetListData`,
+      headers: { Authorization: "Bearer " + middletierToken, searchText: searchText },
       cache: false,
     });
     return response;

@@ -16,7 +16,7 @@ import https from "https";
 import { getHttpsServerOptions } from "office-addin-dev-certs";
 import { getUserData, getSearchedUsers } from "./msgraph-helper";
 import { validateJwt } from "./ssoauth-helper";
-import { CreateRequestSP, UpdateRequestSP, getSharepointData, getSharepointDdoc } from "./Sharepoint-helper";
+import { CreateRequestSP, UpdateRequestSP, getSharepointData, getSharepointDdoc, GetListData } from "./Sharepoint-helper";
 /* global console, process, require, __dirname */
 
 const app = express();
@@ -69,6 +69,7 @@ app.get("/getSPData", validateJwt, getSharepointData);
 app.get("/GetSPDoc", validateJwt, getSharepointDdoc);
 app.post("/CreateRequest", validateJwt, CreateRequestSP);
 app.post("/UpdateRequest", validateJwt, UpdateRequestSP);
+app.get("/GetListData", validateJwt, GetListData);
 // Get the client side task pane files requested
 app.get("/taskpane.html", async (req: any, res: any) => {
   return res.sendfile("taskpane.html");

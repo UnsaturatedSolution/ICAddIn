@@ -4,7 +4,7 @@
  */
 
 import { dialogFallback } from "./fallbackauthdialog";
-import { callGetUserData, DeleteRequest, GetSPData, GetSPDoc, UpdateRequest } from "./middle-tier-calls";
+import { callGetUserData, DeleteRequest, GetSPData, GetSPDoc, UpdateRequest, GetListData } from "./middle-tier-calls";
 import { showMessage } from "./message-helper";
 import { handleClientSideErrors } from "./error-handler";
 import { callGetSearchedADUser, CreateRequest } from "./middle-tier-calls";
@@ -168,7 +168,7 @@ export async function CreateRequestSSO(createItem): Promise<void> {
     }
   }
 }
-export async function UpdateRequestSSO(createItem,itemID): Promise<void> {
+export async function UpdateRequestSSO(createItem, itemID): Promise<void> {
   try {
     let middletierToken: string =
       _middletierToken !== ""
@@ -178,7 +178,7 @@ export async function UpdateRequestSSO(createItem,itemID): Promise<void> {
           allowConsentPrompt: true,
           forMSGraphAccess: true,
         });
-    let response: any = await UpdateRequest(middletierToken, createItem,itemID);
+    let response: any = await UpdateRequest(middletierToken, createItem, itemID);
     return response;
   } catch (exception) {
     if (exception.code) {
@@ -200,7 +200,7 @@ export async function DeleteRequestSSO(itemID): Promise<void> {
           allowConsentPrompt: true,
           forMSGraphAccess: true,
         });
-    let response: any = await DeleteRequest(middletierToken,itemID);
+    let response: any = await DeleteRequest(middletierToken, itemID);
     return response;
   } catch (exception) {
     if (exception.code) {
@@ -210,5 +210,21 @@ export async function DeleteRequestSSO(itemID): Promise<void> {
       showMessage("EXCEPTION: " + JSON.stringify(exception));
       throw exception;
     }
+  }
+}
+export async function GetSPListData(querytext: string, listname: string, callback): Promise<void> {
+  try {
+    let middletierToken: string =
+      _middletierToken !== ""
+        ? _middletierToken
+        : await OfficeRuntime.auth.getAccessToken({
+          allowSignInPrompt: true,
+          allowConsentPrompt: true,
+          forMSGraphAccess: true,
+        });
+    let response: any = await GetListData(middletierToken, querytext, listname);
+    return response;
+  } catch (exception) {
+    console.log(exception)
   }
 }

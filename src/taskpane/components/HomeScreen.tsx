@@ -11,11 +11,12 @@ import {
   useId,
 } from "@fluentui/react-components";
 import type { ComboboxProps } from "@fluentui/react-components";
-import { GetSPDocSSO, getSearchUser } from "../../helpers/sso-helper";
+import { GetSPDocSSO, getSearchUser, GetSPListData } from "../../helpers/sso-helper";
 import { DatePicker, DayOfWeek, DefaultButton, Pivot, PivotItem, defaultDatePickerStrings } from "@fluentui/react";
 import { SectionAssignment } from "./ISectionAssignment";
 import SectionFormComponent from "./SectionForm";
 import FullFormComponent from "./FullForm";
+import SectionDetails from "./SectionDetails";
 
 const MyComponent = () => {
   return <div></div>;
@@ -26,16 +27,18 @@ export interface IProps extends ComboboxProps {
 }
 
 export interface IState {
-  docGUID:string;
+  docGUID: string;
   // options: any[];
   // Sections: SectionAssignment[];
+  SectionsDetails: any[];
 }
 
 export class HomeScreenComponent extends Component<IProps, IState> {
   constructor(props: IProps) {
     super(props);
     this.state = {
-      docGUID:""
+      docGUID: "",
+      SectionsDetails: [],
       // options: [],
       // Sections: [],
     };
@@ -71,6 +74,20 @@ export class HomeScreenComponent extends Component<IProps, IState> {
   // };
   async componentDidMount(): Promise<void> {
     await this.getDocumentMetadata();
+    //await this.GetSPData();
+  }
+  public GetSPData = async () => {
+    const filter = `DocumentID eq '` + this.state.docGUID + `'`;
+    let response: any = await GetSPListData(filter, '', {});
+    console.log('Document ID' + this.state.docGUID);
+    console.log(response);
+    const result = JSON.parse(response);
+    this.setState({ SectionsDetails: response ? result.d.results : [] });
+    if (!response) {
+      throw new Error("Middle tier didn't respond");
+    } else if (response.claims) {
+      console.log("data saved");
+    }
   }
   public getDocumentMetadata = async () => {
     let fileURL = this.props.officeContext.document.url;
@@ -83,7 +100,7 @@ export class HomeScreenComponent extends Component<IProps, IState> {
       if (!response) {
         throw new Error("Middle tier didn't respond");
       } else {
-        this.setState({ docGUID: JSON.parse(response).d.UniqueId });
+        this.setState({ docGUID: JSON.parse(response).d.UniqueId }, this.GetSPData);
       }
     }
   }
@@ -93,10 +110,14 @@ export class HomeScreenComponent extends Component<IProps, IState> {
       <div style={{ backgroundColor: "lightgrey" }}>
         <Pivot>
           <PivotItem headerText="In Progress">
-            <FullFormComponent officeContext={this.props.officeContext} docGUID={this.state.docGUID}/>
+            <div className="UserDashboard">"Tab1"</div>
+            {/*  <FullFormComponent officeContext={this.props.officeContext} docGUID={this.state.docGUID} /> */}
           </PivotItem>
           <PivotItem linkText="Completed">
-            <div className="UserDashboard">"Tab2"</div>
+            {/*  <div className="UserDashboard">"Tab2"</div> */}
+            <SectionDetails
+              sectionInfo={this.state.SectionsDetails}
+            />
           </PivotItem>
         </Pivot>
       </div>
