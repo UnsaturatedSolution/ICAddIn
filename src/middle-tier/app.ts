@@ -14,9 +14,9 @@ import * as logger from "morgan";
 import express from "express";
 import https from "https";
 import { getHttpsServerOptions } from "office-addin-dev-certs";
-import { getUserData, getSearchedUsers } from "./msgraph-helper";
+import { getUserData, getSearchedUsers, getAllADUsers, checkGroup } from "./msgraph-helper";
 import { validateJwt } from "./ssoauth-helper";
-import { CreateRequestSP, UpdateRequestSP, getSharepointData, getSharepointDdoc, GetListData } from "./Sharepoint-helper";
+import { CreateRequestSP, UpdateRequestSP, getSharepointData, getSharepointDdoc, GetListData, getSiteUserFromEmail, getAllSiteUsers } from "./Sharepoint-helper";
 /* global console, process, require, __dirname */
 
 const app = express();
@@ -63,10 +63,14 @@ app.use("/", indexRouter);
 // });
 
 //app.get("/getuserdata", validateJwt, getUserData);
+app.get("/getAllADUsers", validateJwt, getAllADUsers);
 app.get("/getuserdata", validateJwt, getUserData);
 app.get("/getSearchedADUsers", validateJwt, getSearchedUsers);
+app.get("/checkGroup", validateJwt, checkGroup);
 app.get("/getSPData", validateJwt, getSharepointData);
 app.get("/GetSPDoc", validateJwt, getSharepointDdoc);
+app.get("/GetAllSiteUsers", validateJwt, getAllSiteUsers);
+app.get("/GetSiteUserFromEmail", validateJwt, getSiteUserFromEmail);
 app.post("/CreateRequest", validateJwt, CreateRequestSP);
 app.post("/UpdateRequest", validateJwt, UpdateRequestSP);
 app.get("/GetListData", validateJwt, GetListData);

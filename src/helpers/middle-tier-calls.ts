@@ -20,13 +20,69 @@ export async function callGetUserData(middletierToken: string): Promise<any> {
     throw err;
   }
 }
+export async function callCheckGroup(middletierToken: string): Promise<any> {
+  try {
+    const response = await $.ajax({
+      type: "GET",
+      url: `/checkGroup`,
+      headers: { Authorization: "Bearer " + middletierToken },
+      cache: false,
+    });
+    return response;
+  } catch (err) {
+    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+    throw err;
+  }
+}
 
+export async function callGetAllADUsers(middletierToken: string): Promise<any> {
+  try {
+    const response = await $.ajax({
+      type: "GET",
+      url: `/getAllADUsers`,
+      headers: { Authorization: "Bearer " + middletierToken },
+      cache: false,
+    });
+    return response;
+  } catch (err) {
+    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+    throw err;
+  }
+}
 export async function callGetSearchedADUser(middletierToken: string, searchText: string): Promise<any> {
   try {
     const response = await $.ajax({
       type: "GET",
       url: `/getSearchedADUsers`,
       headers: { Authorization: "Bearer " + middletierToken, data: searchText },
+      cache: false,
+    });
+    return response;
+  } catch (err) {
+    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+    throw err;
+  }
+}
+export async function GetAllSiteUsers(middletierToken: string): Promise<any> {
+  try {
+    const response = await $.ajax({
+      type: "GET",
+      url: `/GetAllSiteUsers`,
+      headers: { Authorization: "Bearer " + middletierToken },
+      cache: false,
+    });
+    return response;
+  } catch (err) {
+    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+    throw err;
+  }
+}
+export async function GetSiteUserFromEmail(middletierToken: string, Useremail: string): Promise<any> {
+  try {
+    const response = await $.ajax({
+      type: "GET",
+      url: `/GetSiteUserFromEmail`,
+      headers: { Authorization: "Bearer " + middletierToken, Useremail: Useremail },
       cache: false,
     });
     return response;
@@ -63,12 +119,12 @@ export async function GetSPData(middletierToken: string, searchText: string): Pr
     throw err;
   }
 }
-export async function CreateRequest(middletierToken: string, createItem): Promise<any> {
+export async function CreateRequest(middletierToken: string, listName:string,createItem:any): Promise<any> {
   try {
     const response = await $.ajax({
       type: "POST",
       url: `/CreateRequest`,
-      headers: { Authorization: "Bearer " + middletierToken, Data: JSON.stringify(createItem) },
+      headers: { Authorization: "Bearer " + middletierToken, ListName:listName, Data: JSON.stringify(createItem) },
       cache: false,
     });
     return response;

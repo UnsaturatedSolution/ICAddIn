@@ -4,7 +4,7 @@
  */
 
 import { dialogFallback } from "./fallbackauthdialog";
-import { callGetUserData, DeleteRequest, GetSPData, GetSPDoc, UpdateRequest, GetListData } from "./middle-tier-calls";
+import { callGetUserData, DeleteRequest, GetSPData, GetSPDoc, UpdateRequest, GetListData, GetSiteUserFromEmail, callGetAllADUsers, GetAllSiteUsers, callCheckGroup } from "./middle-tier-calls";
 import { showMessage } from "./message-helper";
 import { handleClientSideErrors } from "./error-handler";
 import { callGetSearchedADUser, CreateRequest } from "./middle-tier-calls";
@@ -69,7 +69,61 @@ function handleAADErrors(response: any, callback: any): void {
     dialogFallback(callback);
   }
 }
+export async function checkGroup(callback): Promise<void> {
+  try {
+    let middletierToken: string =
+      _middletierToken !== ""
+        ? _middletierToken
+        : await OfficeRuntime.auth.getAccessToken({
+          allowSignInPrompt: true,
+          allowConsentPrompt: true,
+          forMSGraphAccess: true,
+        });
+    let response: any = await callCheckGroup(middletierToken);
+    return response;
+  } catch (exception) {
+    console.log(exception)
+  }
+}
 
+export async function getAllUsersSSO(callback): Promise<void> {
+  try {
+    let middletierToken: string =
+      _middletierToken !== ""
+        ? _middletierToken
+        : await OfficeRuntime.auth.getAccessToken({
+          allowSignInPrompt: true,
+          allowConsentPrompt: true,
+          forMSGraphAccess: true,
+        });
+    let response: any = await callGetAllADUsers(middletierToken);
+    if (!response) {
+      throw new Error("Middle tier didn't respond");
+    } else if (response.claims) {
+      let mfaMiddletierToken: string =
+        _mfaMiddletierToken !== ""
+          ? _mfaMiddletierToken
+          : await OfficeRuntime.auth.getAccessToken({
+            authChallenge: response.claims,
+          });
+      response = callGetAllADUsers(mfaMiddletierToken);
+    }
+    if (response.error) {
+      handleAADErrors(response, callback);
+    } else {
+      callback(response);
+    }
+  } catch (exception) {
+    if (exception.code) {
+      if (handleClientSideErrors(exception)) {
+        dialogFallback(callback);
+      }
+    } else {
+      showMessage("EXCEPTION: " + JSON.stringify(exception));
+      throw exception;
+    }
+  }
+}
 export async function getSearchUser(querytext: string, callback): Promise<void> {
   try {
     let middletierToken: string =
@@ -91,6 +145,82 @@ export async function getSearchUser(querytext: string, callback): Promise<void> 
             authChallenge: response.claims,
           });
       response = callGetSearchedADUser(mfaMiddletierToken, querytext);
+    }
+    if (response.error) {
+      handleAADErrors(response, callback);
+    } else {
+      callback(response);
+    }
+  } catch (exception) {
+    if (exception.code) {
+      if (handleClientSideErrors(exception)) {
+        dialogFallback(callback);
+      }
+    } else {
+      showMessage("EXCEPTION: " + JSON.stringify(exception));
+      throw exception;
+    }
+  }
+}
+export async function GetAllSiteUsersSSO(callback): Promise<void> {
+  try {
+    let middletierToken: string =
+      _middletierToken !== ""
+        ? _middletierToken
+        : await OfficeRuntime.auth.getAccessToken({
+          allowSignInPrompt: true,
+          allowConsentPrompt: true,
+          forMSGraphAccess: true,
+        });
+    let response: any = await GetAllSiteUsers(middletierToken);
+    if (!response) {
+      throw new Error("Middle tier didn't respond");
+    } else if (response.claims) {
+      let mfaMiddletierToken: string =
+        _mfaMiddletierToken !== ""
+          ? _mfaMiddletierToken
+          : await OfficeRuntime.auth.getAccessToken({
+            authChallenge: response.claims,
+          });
+      response = GetAllSiteUsers(mfaMiddletierToken);
+    }
+    if (response.error) {
+      handleAADErrors(response, callback);
+    } else {
+      callback(response);
+    }
+  } catch (exception) {
+    if (exception.code) {
+      if (handleClientSideErrors(exception)) {
+        dialogFallback(callback);
+      }
+    } else {
+      showMessage("EXCEPTION: " + JSON.stringify(exception));
+      throw exception;
+    }
+  }
+}
+export async function GetSiteUserFromEmailSSO(userEmail: string, callback): Promise<void> {
+  try {
+    let middletierToken: string =
+      _middletierToken !== ""
+        ? _middletierToken
+        : await OfficeRuntime.auth.getAccessToken({
+          allowSignInPrompt: true,
+          allowConsentPrompt: true,
+          forMSGraphAccess: true,
+        });
+    let response: any = await GetSiteUserFromEmail(middletierToken, userEmail);
+    if (!response) {
+      throw new Error("Middle tier didn't respond");
+    } else if (response.claims) {
+      let mfaMiddletierToken: string =
+        _mfaMiddletierToken !== ""
+          ? _mfaMiddletierToken
+          : await OfficeRuntime.auth.getAccessToken({
+            authChallenge: response.claims,
+          });
+      response = GetSiteUserFromEmail(mfaMiddletierToken, userEmail);
     }
     if (response.error) {
       handleAADErrors(response, callback);
@@ -146,7 +276,7 @@ export async function GetSPDataSSO(querytext: string, callback): Promise<void> {
     // }
   }
 }
-export async function CreateRequestSSO(createItem): Promise<void> {
+export async function CreateRequestSSO(listName:string,createItem:any): Promise<void> {
   try {
     let middletierToken: string =
       _middletierToken !== ""
@@ -156,7 +286,7 @@ export async function CreateRequestSSO(createItem): Promise<void> {
           allowConsentPrompt: true,
           forMSGraphAccess: true,
         });
-    let response: any = await CreateRequest(middletierToken, createItem);
+    let response: any = await CreateRequest(middletierToken, listName,createItem);
     return response;
   } catch (exception) {
     if (exception.code) {

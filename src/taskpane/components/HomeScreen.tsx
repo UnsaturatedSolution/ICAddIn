@@ -11,7 +11,7 @@ import {
   useId,
 } from "@fluentui/react-components";
 import type { ComboboxProps } from "@fluentui/react-components";
-import { GetSPDocSSO, getSearchUser, GetSPListData } from "../../helpers/sso-helper";
+import { GetSPDocSSO, getSearchUser, GetSPListData, checkGroup } from "../../helpers/sso-helper";
 import { DatePicker, DayOfWeek, DefaultButton, Pivot, PivotItem, defaultDatePickerStrings } from "@fluentui/react";
 import { SectionAssignment } from "./ISectionAssignment";
 import SectionFormComponent from "./SectionForm";
@@ -31,6 +31,7 @@ export interface IState {
   // options: any[];
   // Sections: SectionAssignment[];
   SectionsDetails: any[];
+  mappedSectionInfo: any[];
 }
 
 export class HomeScreenComponent extends Component<IProps, IState> {
@@ -39,6 +40,7 @@ export class HomeScreenComponent extends Component<IProps, IState> {
     this.state = {
       docGUID: "",
       SectionsDetails: [],
+      mappedSectionInfo: [],
       // options: [],
       // Sections: [],
     };
@@ -73,21 +75,42 @@ export class HomeScreenComponent extends Component<IProps, IState> {
   //   });
   // };
   async componentDidMount(): Promise<void> {
-    await this.getDocumentMetadata();
-    //await this.GetSPData();
+    await this.checkUser();
+    const docGUID = await this.getDocumentMetadata();
+    const sectionInfo = await this.GetSPData(docGUID);
+    const mappedSectionInfo = this.mapSectionItemToRow(sectionInfo,docGUID)
+    this.setState({ docGUID: docGUID, SectionsDetails: sectionInfo, mappedSectionInfo: mappedSectionInfo });
   }
-  public GetSPData = async () => {
-    const filter = `DocumentID eq '` + this.state.docGUID + `'`;
+  public mapSectionItemToRow = (sectionInfo,docGUID) => {
+    return sectionInfo.map((item, index) => {
+      return {
+        SectionNumber: item.SectionSequence,
+        POwnerID: 0,
+        POwnerEmail: "",
+        SOwnerID: 0,
+        SOwnerEmail: "",
+        Contributor: [],
+        DeadLineDate: item.TargetDate ? new Date(item.TargetDate) : "",
+        DocumentID: item.DocumentID ? item.DocumentID : docGUID,
+        SectionID: item.SectionID ? item.SectionID : ""
+      }
+    })
+  }
+  public GetSPData = async (docGUID) => {
+    const filter = `DocumentID eq '` + docGUID + `' and IsActive eq 1`;
     let response: any = await GetSPListData(filter, '', {});
-    console.log('Document ID' + this.state.docGUID);
+    console.log('Document ID' + docGUID);
     console.log(response);
     const result = JSON.parse(response);
-    this.setState({ SectionsDetails: response ? result.d.results : [] });
+    let sectionInfo = [];
+    // const mappedSectionInfo = this.mapSectionItemToRow(sectionInfo)
+    // this.setState({ SectionsDetails: sectionInfo, mappedSectionInfo: mappedSectionInfo });
     if (!response) {
       throw new Error("Middle tier didn't respond");
-    } else if (response.claims) {
-      console.log("data saved");
+    } else {
+      sectionInfo = response ? result.d.results : [];
     }
+    return sectionInfo;
   }
   public getDocumentMetadata = async () => {
     let fileURL = this.props.officeContext.document.url;
@@ -96,24 +119,34 @@ export class HomeScreenComponent extends Component<IProps, IState> {
       let serverRelativeUrl = fileURL.split('https://vichitra.sharepoint.com')[fileURL.split('https://vichitra.sharepoint.com').length - 1];
 
       let response: any = await GetSPDocSSO(serverRelativeUrl, {});
-      console.log(response);
+      // console.log(response);
+      let docGUID = "";
       if (!response) {
         throw new Error("Middle tier didn't respond");
       } else {
-        this.setState({ docGUID: JSON.parse(response).d.UniqueId }, this.GetSPData);
+        // this.setState({ docGUID: JSON.parse(response).d.UniqueId }, () => { this.GetSPData() });
+        docGUID = JSON.parse(response).d.UniqueId;
       }
+      return docGUID;
     }
   }
-
+  public checkUser = async () => {
+    let response: any = await checkGroup({});
+    console.log(response);
+    let isGroup = [];
+    if (response && response.value.length > 0)
+      isGroup = response.value.filter((res) => { return res.displayName == 'CoCoInitiatorGrp' });
+    isGroup.length > 0 ? console.log('Access Granted') : console.log('Access Denied');
+  }
   public render(): ReactElement<IProps> {
     return (
       <div style={{ backgroundColor: "lightgrey" }}>
         <Pivot>
-          <PivotItem headerText="In Progress">
-            <div className="UserDashboard">"Tab1"</div>
-            {/*  <FullFormComponent officeContext={this.props.officeContext} docGUID={this.state.docGUID} /> */}
+          <PivotItem headerText="Section Content">
+            {/* <div className="UserDashboard">"Tab1"</div> */}
+            <FullFormComponent officeContext={this.props.officeContext} sectionInfo={this.state.mappedSectionInfo} docGUID={this.state.docGUID} />
           </PivotItem>
-          <PivotItem linkText="Completed">
+          <PivotItem linkText="Document Status">
             {/*  <div className="UserDashboard">"Tab2"</div> */}
             <SectionDetails
               sectionInfo={this.state.SectionsDetails}

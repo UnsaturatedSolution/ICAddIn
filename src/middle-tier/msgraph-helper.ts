@@ -94,6 +94,31 @@ export async function getGraphData(accessToken: string, apiUrl: string, queryPar
   });
 }
 
+export async function getAllADUsers(req: any, res: any, next: any) {
+  const authorization: string = req.get("Authorization");
+  await getAccessToken(authorization)
+    .then(async (graphTokenResponse) => {
+      if (graphTokenResponse && (graphTokenResponse.claims || graphTokenResponse.error)) {
+        res.send(graphTokenResponse);
+      } else {
+        const graphToken: string = graphTokenResponse.access_token;
+        const graphUrlSegment: string = "/users?$select=*";
+        //const graphUrlSegment: string = "/users?$select=displayName,id";
+        console.log(graphUrlSegment);
+        const graphQueryParamSegment: string = process.env.QUERY_PARAM_SEGMENT || "";
+        const graphData = await getGraphData(graphToken, graphUrlSegment, graphQueryParamSegment);
+        if (graphData.code) {
+          next(createError(graphData.code, "Microsoft Graph error " + JSON.stringify(graphData)));
+        } else {
+          res.send(graphData);
+        }
+      }
+    })
+    .catch((err) => {
+      res.status(401).send(err.message);
+      return;
+    });
+}
 export async function getSearchedUsers(req: any, res: any, next: any) {
   const authorization: string = req.get("Authorization");
   const data: string = req.get("data");
@@ -103,7 +128,7 @@ export async function getSearchedUsers(req: any, res: any, next: any) {
         res.send(graphTokenResponse);
       } else {
         const graphToken: string = graphTokenResponse.access_token;
-        const graphUrlSegment: string = "/users?$select=displayName,id&$filter=startswith(displayName,'" + data + "')";
+        const graphUrlSegment: string = "/users?$select=*&$filter=startswith(displayName,'" + data + "')";
         //const graphUrlSegment: string = "/users?$select=displayName,id";
         console.log(graphUrlSegment);
         const graphQueryParamSegment: string = process.env.QUERY_PARAM_SEGMENT || "";
@@ -111,6 +136,34 @@ export async function getSearchedUsers(req: any, res: any, next: any) {
         if (graphData.code) {
           next(createError(graphData.code, "Microsoft Graph error " + JSON.stringify(graphData)));
         } else {
+          res.send(graphData);
+        }
+      }
+    })
+    .catch((err) => {
+      res.status(401).send(err.message);
+      return;
+    });
+}
+export async function checkGroup(req: any, res: any, next: any) {
+  const authorization: string = req.get("Authorization");
+  const data: string = req.get("data");
+  await getAccessToken(authorization)
+    .then(async (graphTokenResponse) => {
+      if (graphTokenResponse && (graphTokenResponse.claims || graphTokenResponse.error)) {
+        res.send(graphTokenResponse);
+      } else {
+        const graphToken: string = graphTokenResponse.access_token;
+        const graphUrlSegment: string = "/me/memberOf?$select=*";
+        //const graphUrlSegment: string = "/users?$select=displayName,id";
+        console.log(graphUrlSegment);
+        const graphQueryParamSegment: string = process.env.QUERY_PARAM_SEGMENT || "";
+        const graphData = await getGraphData(graphToken, graphUrlSegment, graphQueryParamSegment);
+        if (graphData.code) {
+          console.log('userGroup check' + JSON.stringify(graphData));
+          next(createError(graphData.code, "Microsoft Graph error " + JSON.stringify(graphData)));
+        } else {
+          console.log('userGroup check' + graphData);
           res.send(graphData);
         }
       }

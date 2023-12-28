@@ -62,7 +62,7 @@ export class ContributorDialog extends Component<IProps, IState> {
         return (
             <div className={`ms-Grid-row`}>
                 <div className={`ms-Grid-col ms-sm12`} style={{ paddingBottom: 10 }}>
-                    <ShowADUserComponent fieldID={"Secondary"} fieldName="" isMandatory={true}></ShowADUserComponent>
+                    {/* <ShowADUserComponent fieldState={"Secondary"} fieldName="" isMandatory={true}></ShowADUserComponent> */}
                 </div>
                 <div className={`ms-Grid-col ms-sm12`} style={{ paddingBottom: 10 }}>
                     <DetailsList

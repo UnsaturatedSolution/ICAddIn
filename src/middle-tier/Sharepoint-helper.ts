@@ -23,6 +23,51 @@ export async function getSharepointData(req: any, res: any, next: any) {
         });
     });
 }
+export async function getAllSiteUsers(req: any, res: any, next: any) {
+  spauth
+    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
+      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
+      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
+      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
+    })
+    .then((options) => {
+      //perform request with any http-enabled library (request-promise in a sample below):
+      let headers = options.headers;
+      headers["Accept"] = "application/json;odata=verbose";
+      request
+        .get({
+          url: `https://vichitra.sharepoint.com/sites/dev/_api/web/SiteUsers?$select=*,Id&$top=5000`,
+          headers: headers,
+        })
+        .then((response) => {
+          console.log(response);
+          res.send(response);
+        });
+    });
+}
+export async function getSiteUserFromEmail(req: any, res: any, next: any) {
+  let userEmail = req.get("Useremail");
+  spauth
+    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
+      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
+      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
+      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
+    })
+    .then((options) => {
+      //perform request with any http-enabled library (request-promise in a sample below):
+      let headers = options.headers;
+      headers["Accept"] = "application/json;odata=verbose";
+      request
+        .get({
+          url: `https://vichitra.sharepoint.com/sites/dev/_api/web/SiteUsers/getByEmail('${userEmail}')?$select=*,Id`,
+          headers: headers,
+        })
+        .then((response) => {
+          console.log(response);
+          res.send(response);
+        });
+    });
+}
 export async function getSharepointDdoc(req: any, res: any, next: any) {
   let docUrl = req.get("Docurl");
   spauth
@@ -49,6 +94,7 @@ export async function getSharepointDdoc(req: any, res: any, next: any) {
 
 export async function CreateRequestSP(req, next, res) {
   let data = req.get("Data");
+  let listName = req.get("ListName");
   console.log(data);
 
   spauth
@@ -64,7 +110,7 @@ export async function CreateRequestSP(req, next, res) {
         (headers["Content-Type"] = "application/json"),
         request
           .post({
-            url: "https://vichitra.sharepoint.com/sites/dev/_api/web/lists/getbytitle('InvestcorpDocumentAssignees')/items",
+            url: `https://vichitra.sharepoint.com/sites/dev/_api/web/lists/getbytitle('${listName}')/items`,
             headers: headers,
             body: data,
           })

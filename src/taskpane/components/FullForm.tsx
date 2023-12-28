@@ -15,15 +15,17 @@ const MyComponent = () => {
 export interface IProps extends ComboboxProps {
     officeContext: any;
     docGUID: string;
+    sectionInfo: any[];
 }
 
 export interface IState {
     options: any[];
     Sections: SectionAssignment[];
     isDocFreezed: boolean;
-    searchText:string;
+    searchText: string;
     // docGUID: string;
     tempItemID: string;
+    docDueDate: Date;
 }
 
 let sampleCreateItem = {
@@ -46,52 +48,160 @@ export class FullFormComponent extends Component<IProps, IState> {
             options: [],
             Sections: [],
             isDocFreezed: false,
-            searchText:"",
+            searchText: "",
             // docGUID: "",
-            tempItemID: "0"
+            tempItemID: "0",
+            docDueDate: null
         };
     }
     async componentDidMount(): Promise<void> {
         // await this.getDocumentMetadata();
         // await this.getSPData();
-        await this.syncSection();
+        // await this.syncSection();
+        // this.setState({ Sections: this.props.sectionInfo });
+    }
+    async componentDidUpdate(prevProps, prevState): Promise<void> {
+        // const prevSectionRefs = this.getSectionRefStr(prevProps.sectionInfo);
+        // const currectionRefs = this.getSectionRefStr(this.props.sectionInfo);
+        // if (prevSectionRefs != currectionRefs) {
+        //     this.setState({ Sections: this.props.sectionInfo });
+        // }
+    }
+    public getSectionRefStr = (sectionInfo) => {
+        let refStr = "";
+        if (sectionInfo.length > 0) {
+            refStr = sectionInfo.map(item => item.SectionID).join(";");
+        }
+        return refStr;
+    }
+    public mapSectionItemToRow = (sectionInfo) => {
+        return sectionInfo.map((item, index) => {
+            return {
+                SectionNumber: item.SectionSequence,
+                SectionName: item.SectionName ? item.SectionName : "",
+                POwnerID: item.PrimaryOwnerId ? item.PrimaryOwnerId : 0,
+                POwnerEmail: "",
+                SOwnerID: item.SecondaryOwnerId ? item.SecondaryOwnerId : 0,
+                SOwnerEmail: "",
+                Contributor: [],
+                DeadLineDate: item.TargetDate ? new Date(item.TargetDate) : null,
+                DocumentID: item.DocumentID ? item.DocumentID : this.props.docGUID,
+                SectionID: item.SectionID ? item.SectionID : ""
+            }
+        })
+    }
+    public mapSectionRowToItem = (sectionInfo) => {
+        return sectionInfo.map((item, index) => {
+            return {
+                SectionSequence: item.SectionNumber,
+                SectionName: item.SectionName ? item.SectionName : "",
+                PrimaryOwnerId: item.POwnerID ? item.POwnerID : 0,
+                // POwnerEmail: "",
+                // SOwnerID: 0,
+                SecondaryOwnerId: item.SOwnerID ? item.SOwnerID : 0,
+                // SOwnerEmail: "",
+                // Contributor: [],
+                Status: "NotStarted",
+                // Comments: "Comms",
+                TargetDate: item.DeadLineDate ? new Date(item.DeadLineDate) : null,
+                DocumentID: item.DocumentID ? item.DocumentID : this.props.docGUID,
+                SectionID: item.SectionID ? item.SectionID : ""
+            }
+        })
+    }
+    public getData = async () => {
+        await Word.run(async (context) => {
+            const mySections = context.document.sections;
+            mySections.load('body/style');
+            await context.sync();
+            console.log(mySections);
+            const firstbody = mySections.items[0].body;
+            firstbody.load('text');
+            await context.sync();
+            const sectionName = `${firstbody.text.split(" ")[0]} ${firstbody.text.split(" ")[1]} ${firstbody.text.split(" ")[2]}`
+            console.log(sectionName);
+            console.log("Added a header to the first section.");
+            this.syncSection();
+        });
     }
     public syncSection = async () => {
-        console.log(this.props.officeContext);
+        const tempSections = [...this.state.Sections];
         await Word.run(async (context) => {
             const secs = context.document.sections;
-            const docProps = context.document.properties;
-            context.load(docProps);
-            context.load(docProps.customProperties);
-            context.load(secs);
+            secs.load('body/style');
+            // const docProps = context.document.properties;
+            // context.load(docProps);
+            // context.load(docProps.customProperties);
+            // context.load(secs);
             await context.sync();
-            console.log(secs);
-            console.log(docProps);
-            console.log(secs.toJSON().items);
+            const sectionRefs = this.getSectionRefStr(tempSections).split(";");
             let Items = [];
-            let sectionData = [];
-            let tempData = null;
-            await Promise.all(
-                secs.toJSON().items.map((section, index) => {
+
+            // await Promise.all(
+            // secs.items.map(async (section, index) => {
+            for (let i = 0; i < secs.items.length; i++) {
+                let section = secs.items[i];
+                let index = i;
+                const sectionRefID = section["__R"] ? section["__R"] : "";
+                const itemRefIDIndex = sectionRefs.indexOf(sectionRefID);
+                const bodyObj = secs.items[index].body;
+                bodyObj.load('text');
+                await context.sync();
+                console.log(bodyObj);
+                const sectionName = `${bodyObj.text.split(" ")[0]} ${bodyObj.text.split(" ")[1]} ${bodyObj.text.split(" ")[2]}`
+                // const sectionItem = secs.items[index].body;
+                // sectionItem.load('text');
+                // await context.sync();
+                // console.log(sectionItem);
+                // sectionItem.load('text');
+                // await context.sync();
+                // console.log(sectionItem);
+                // let body = secs.items[index].body;
+                // context.load(body);
+                // await context.sync();
+                // body.load("text");
+                // await context.sync();
+                if (itemRefIDIndex >= 0) {
+                    Items.push({ ...tempSections[itemRefIDIndex], ...{ SectionNumber: index + 1 } });
+                }
+                else {
                     Items.push({
                         SectionNumber: index + 1,
+                        SectionName: sectionName,
                         POwnerID: 0,
                         POwnerEmail: "",
+                        POwneDisplayName: "",
                         SOwnerID: 0,
                         SOwnerEmail: "",
+                        SOwnerDisplayName: "",
                         Contributor: [],
-                        DeadLineDate: new Date(),
-                        DocumentID: this.props.docGUID
+                        DeadLineDate: "",
+                        DocumentID: this.props.docGUID,
+                        SectionID: sectionRefID
                     });
-                    sectionData.push({ section });
-                })
-            ).then(values => {
-                tempData = values;
-            });
-            console.log(sectionData);
+                }
+            }
+            // );
             this.setState({ Sections: Items });
         });
     };
+    public resetAllSections = () => {
+        let tempSections = this.state.Sections.map((section) => {
+            return {
+                ...section,
+                POwnerID: 0,
+                POwnerEmail: "",
+                POwneDisplayName: "",
+                SOwnerID: 0,
+                SOwnerEmail: "",
+                SOwnerDisplayName: "",
+                Contributor: [],
+                DeadLineDate: null,
+            };
+        })
+        this.setState({ Sections: tempSections });
+
+    }
     public updateSectionState = (sections) => {
         // let tempSections = this.state.Sections.map(item => {
         //     if (item.SectionNumber == updatedSectionItem.SectionNumber)
@@ -125,9 +235,17 @@ export class FullFormComponent extends Component<IProps, IState> {
     //     }
     // }
     public createAllSections = async () => {
+        let docDetailsItem = {
+            DocumentID: this.props.docGUID,
+            DocStatus: "Initiated",
+            DueDate: this.state.docDueDate,
+            ShouldFreezeDoc: true
+        };
+        let response: any = await CreateRequestSSO("InvestCorpDocumentDetails", docDetailsItem);
+        const mappedSections = this.mapSectionRowToItem(this.state.Sections);
         await Promise.all(
-            this.state.Sections.map(async (section, index) => {
-                let response: any = await CreateRequestSSO(section);
+            mappedSections.map(async (section, index) => {
+                let response: any = await CreateRequestSSO("InvestcorpDocumentAssignees", section);
                 if (!response) {
                     throw new Error("Middle tier didn't respond");
                 } else if (response.claims) {
@@ -137,18 +255,27 @@ export class FullFormComponent extends Component<IProps, IState> {
         ).then(values => {
             console.log(values);
         });
+        // for (let i = 0; i < mappedSections.length; i++) {
+        //     const sectionItem = mappedSections[i];
+        //     let response: any = await CreateRequestSSO(sectionItem);
+        //     if (!response) {
+        //         throw new Error("Middle tier didn't respond");
+        //     } else if (response.claims) {
+        //         console.log("data saved");
+        //     }
+        // }
     }
 
-    public createSectionItem = async () => {
-        let createItem = { ...sampleCreateItem };
-        createItem.DocumentID = this.props.docGUID;
-        let response: any = await CreateRequestSSO(createItem);
-        if (!response) {
-            throw new Error("Middle tier didn't respond");
-        } else if (response.claims) {
-            console.log("data saved");
-        }
-    }
+    // public createSectionItem = async () => {
+    //     let createItem = { ...sampleCreateItem };
+    //     createItem.DocumentID = this.props.docGUID;
+    //     let response: any = await CreateRequestSSO(createItem);
+    //     if (!response) {
+    //         throw new Error("Middle tier didn't respond");
+    //     } else if (response.claims) {
+    //         console.log("data saved");
+    //     }
+    // }
     public updateSectionItem = async () => {
         let itemID = `${this.state.tempItemID}`;
         let createItem = {
@@ -195,7 +322,7 @@ export class FullFormComponent extends Component<IProps, IState> {
                     }} />
 
                 </div> */}
-                <div className={`ms-Grid-col ms-sm12`} style={{ display: "flex",alignItems: 'center',justifyContent: 'space-between' }}>
+                <div className={`ms-Grid-col ms-sm12`} style={{ display: "flex", alignItems: 'center', justifyContent: 'space-between' }}>
                     <DatePicker
                         label={"Due Date"}
                         isRequired={true}
@@ -206,13 +333,17 @@ export class FullFormComponent extends Component<IProps, IState> {
                         ariaLabel="Select a date"
                         // DatePicker uses English strings by default. For localized apps, you must override this prop.
                         strings={defaultDatePickerStrings}
+                        value={this.state.docDueDate}
+                        onSelectDate={(date) => {
+                            this.setState({ docDueDate: date });
+                        }}
                     />
                     <Toggle label="Freeze" checked={this.state.isDocFreezed} onChange={(event: React.MouseEvent<HTMLElement>, checked?: boolean) => { this.setState({ isDocFreezed: checked }) }} />
                     <DefaultButton
                         style={{ marginLeft: 10, color: "#000", backgroundColor: "white" }}
                         text="Sync Section"
                         iconProps={{ iconName: "Reply" }}
-                        onClick={this.syncSection}
+                        onClick={this.getData}
                     />
                     {/* <DefaultButton
                         style={{ marginLeft: 10, color: "#000", backgroundColor: "white" }}
@@ -233,9 +364,9 @@ export class FullFormComponent extends Component<IProps, IState> {
                         onClick={this.deleteSectionItem}
                     /> */}
                 </div>
-                <div className={`ms-Grid-col ms-sm12`} style={{ paddingBottom:10}}>
-                    <TextField label="Filter" placeholder="Please provide text" value={this.state.searchText} onChange={(event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string)=>this.setState({searchText:newValue})} iconProps={{ iconName: 'Search' }} />
-                </div>
+                {/* <div className={`ms-Grid-col ms-sm12`} style={{ paddingBottom: 10 }}>
+                    <TextField label="Filter" placeholder="Please provide text" value={this.state.searchText} onChange={(event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => this.setState({ searchText: newValue })} iconProps={{ iconName: 'Search' }} />
+                </div> */}
                 {/* <div className={`ms-Grid-col ms-sm12`}>
                     {this.state.Sections.length > 0 && this.state.Sections.map((sectionItem) => {
                         return <SectionFormComponent
@@ -246,18 +377,24 @@ export class FullFormComponent extends Component<IProps, IState> {
                 </div> */}
                 <SectionFormGrid sections={this.state.Sections}
                     updateParentSectionState={this.updateSectionState} ></SectionFormGrid>
-                <div className={`ms-Grid-col ms-sm12`}>
+                <div className={`ms-Grid-col ms-sm12`} style={{ marginTop: 10, display: "flex", alignItems: 'center', justifyContent: 'space-between' }}>
                     <DefaultButton
-                        style={{ marginLeft: 10, color: "#000", backgroundColor: "white" }}
-                        iconProps={{ iconName: "Accept" }}
-                        text="Freeze Document"
-                        onClick={() => { }}
-                    />
-                    <DefaultButton
-                        style={{ marginLeft: 10, color: "#000", backgroundColor: "white" }}
-                        text="Create All Sections"
+                        style={{ color: "#000", backgroundColor: "white" }}
+                        text="Initiate Document"
                         iconProps={{ iconName: "Reply" }}
                         onClick={this.createAllSections}
+                    />
+                    <DefaultButton
+                        style={{ color: "#000", backgroundColor: "white" }}
+                        text="Save"
+                        iconProps={{ iconName: "Reply" }}
+                        onClick={this.createAllSections}
+                    />
+                    <DefaultButton
+                        style={{ color: "#000", backgroundColor: "white" }}
+                        text="Reset"
+                        iconProps={{ iconName: "Reply" }}
+                        onClick={this.resetAllSections}
                     />
                 </div>
             </div>
