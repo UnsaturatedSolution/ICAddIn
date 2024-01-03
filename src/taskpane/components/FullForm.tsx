@@ -3,9 +3,10 @@ import { Textarea, type ComboboxProps } from "@fluentui/react-components";
 import { DatePicker, DayOfWeek, DefaultButton, TextField, Toggle, defaultDatePickerStrings } from "@fluentui/react";
 import { SectionAssignment } from "./ISectionAssignment";
 import SectionFormComponent from "./SectionForm";
-import { CreateRequestSSO, DeleteRequestSSO, GetSPDataSSO, GetSPDocSSO, UpdateRequestSSO } from "../../helpers/sso-helper";
+import { CreateRequestSSO, GetSPDataSSO, GetSPDocSSO, UpdateRequestSSO } from "../../helpers/sso-helper";
 import { FlagPrideIntersexInclusiveProgress20Filled } from "@fluentui/react-icons";
 import SectionFormGrid from "./SectionFormGrid";
+import { onFormatDate } from "../../utilities/utility";
 
 
 const MyComponent = () => {
@@ -16,6 +17,7 @@ export interface IProps extends ComboboxProps {
     officeContext: any;
     docGUID: string;
     sectionInfo: any[];
+    docInfo: any;
 }
 
 export interface IState {
@@ -58,14 +60,14 @@ export class FullFormComponent extends Component<IProps, IState> {
         // await this.getDocumentMetadata();
         // await this.getSPData();
         // await this.syncSection();
-        // this.setState({ Sections: this.props.sectionInfo });
+        this.setState({ Sections: this.props.sectionInfo });
     }
     async componentDidUpdate(prevProps, prevState): Promise<void> {
-        // const prevSectionRefs = this.getSectionRefStr(prevProps.sectionInfo);
-        // const currectionRefs = this.getSectionRefStr(this.props.sectionInfo);
-        // if (prevSectionRefs != currectionRefs) {
-        //     this.setState({ Sections: this.props.sectionInfo });
-        // }
+        const prevSectionRefs = this.getSectionRefStr(prevProps.sectionInfo);
+        const currectionRefs = this.getSectionRefStr(this.props.sectionInfo);
+        if (prevSectionRefs != currectionRefs) {
+            this.setState({ Sections: this.props.sectionInfo });
+        }
     }
     public getSectionRefStr = (sectionInfo) => {
         let refStr = "";
@@ -74,22 +76,22 @@ export class FullFormComponent extends Component<IProps, IState> {
         }
         return refStr;
     }
-    public mapSectionItemToRow = (sectionInfo) => {
-        return sectionInfo.map((item, index) => {
-            return {
-                SectionNumber: item.SectionSequence,
-                SectionName: item.SectionName ? item.SectionName : "",
-                POwnerID: item.PrimaryOwnerId ? item.PrimaryOwnerId : 0,
-                POwnerEmail: "",
-                SOwnerID: item.SecondaryOwnerId ? item.SecondaryOwnerId : 0,
-                SOwnerEmail: "",
-                Contributor: [],
-                DeadLineDate: item.TargetDate ? new Date(item.TargetDate) : null,
-                DocumentID: item.DocumentID ? item.DocumentID : this.props.docGUID,
-                SectionID: item.SectionID ? item.SectionID : ""
-            }
-        })
-    }
+    // public mapSectionItemToRow = (sectionInfo) => {
+    //     return sectionInfo.map((item, index) => {
+    //         return {
+    //             SectionNumber: item.SectionSequence,
+    //             SectionName: item.SectionName ? item.SectionName : "",
+    //             POwnerID: item.PrimaryOwnerId ? item.PrimaryOwnerId : 0,
+    //             POwnerEmail: "",
+    //             SOwnerID: item.SecondaryOwnerId ? item.SecondaryOwnerId : 0,
+    //             SOwnerEmail: "",
+    //             Contributors: [],
+    //             DeadLineDate: item.TargetDate ? new Date(item.TargetDate) : null,
+    //             DocumentID: item.DocumentID ? item.DocumentID : this.props.docGUID,
+    //             SectionID: item.SectionID ? item.SectionID : ""
+    //         }
+    //     })
+    // }
     public mapSectionRowToItem = (sectionInfo) => {
         return sectionInfo.map((item, index) => {
             return {
@@ -100,7 +102,7 @@ export class FullFormComponent extends Component<IProps, IState> {
                 // SOwnerID: 0,
                 SecondaryOwnerId: item.SOwnerID ? item.SOwnerID : 0,
                 // SOwnerEmail: "",
-                // Contributor: [],
+                // Contributors: [],
                 Status: "NotStarted",
                 // Comments: "Comms",
                 TargetDate: item.DeadLineDate ? new Date(item.DeadLineDate) : null,
@@ -109,21 +111,21 @@ export class FullFormComponent extends Component<IProps, IState> {
             }
         })
     }
-    public getData = async () => {
-        await Word.run(async (context) => {
-            const mySections = context.document.sections;
-            mySections.load('body/style');
-            await context.sync();
-            console.log(mySections);
-            const firstbody = mySections.items[0].body;
-            firstbody.load('text');
-            await context.sync();
-            const sectionName = `${firstbody.text.split(" ")[0]} ${firstbody.text.split(" ")[1]} ${firstbody.text.split(" ")[2]}`
-            console.log(sectionName);
-            console.log("Added a header to the first section.");
-            this.syncSection();
-        });
-    }
+    // public getData = async () => {
+    //     await Word.run(async (context) => {
+    //         const mySections = context.document.sections;
+    //         mySections.load('body/style');
+    //         await context.sync();
+    //         console.log(mySections);
+    //         const firstbody = mySections.items[0].body;
+    //         firstbody.load('text');
+    //         await context.sync();
+    //         const sectionName = `${firstbody.text.split(" ")[0]} ${firstbody.text.split(" ")[1]} ${firstbody.text.split(" ")[2]}`
+    //         console.log(sectionName);
+    //         console.log("Added a header to the first section.");
+    //         this.syncSection();
+    //     });
+    // }
     public syncSection = async () => {
         const tempSections = [...this.state.Sections];
         await Word.run(async (context) => {
@@ -148,7 +150,8 @@ export class FullFormComponent extends Component<IProps, IState> {
                 bodyObj.load('text');
                 await context.sync();
                 console.log(bodyObj);
-                const sectionName = `${bodyObj.text.split(" ")[0]} ${bodyObj.text.split(" ")[1]} ${bodyObj.text.split(" ")[2]}`
+                const sectionNameArr = bodyObj.text.trim().split("\r");
+                const sectionName = sectionNameArr.length > 0 ? sectionNameArr[0] : "";
                 // const sectionItem = secs.items[index].body;
                 // sectionItem.load('text');
                 // await context.sync();
@@ -174,7 +177,7 @@ export class FullFormComponent extends Component<IProps, IState> {
                         SOwnerID: 0,
                         SOwnerEmail: "",
                         SOwnerDisplayName: "",
-                        Contributor: [],
+                        Contributors: [],
                         DeadLineDate: "",
                         DocumentID: this.props.docGUID,
                         SectionID: sectionRefID
@@ -202,6 +205,24 @@ export class FullFormComponent extends Component<IProps, IState> {
         this.setState({ Sections: tempSections });
 
     }
+    // private addNewSection=()=>{
+    //     let tempSectipons = [...this.state.Sections];
+    //     tempSectipons.push({
+    //         SectionNumber: this.state.Sections.length+1,
+    //         SectionName: "",
+    //         POwnerID: 0,
+    //         POwnerEmail: "",
+    //         POwneDisplayName: "",
+    //         SOwnerID: 0,
+    //         SOwnerEmail: "",
+    //         SOwnerDisplayName: "",
+    //         Contributor: [],
+    //         DeadLineDate: null,
+    //         DocumentID: this.props.docGUID,
+    //         SectionID: "NA"
+    //     });
+    //     this.setState({Sections:tempSectipons})
+    // }
     public updateSectionState = (sections) => {
         // let tempSections = this.state.Sections.map(item => {
         //     if (item.SectionNumber == updatedSectionItem.SectionNumber)
@@ -241,7 +262,7 @@ export class FullFormComponent extends Component<IProps, IState> {
             DueDate: this.state.docDueDate,
             ShouldFreezeDoc: true
         };
-        let response: any = await CreateRequestSSO("InvestCorpDocumentDetails", docDetailsItem);
+        CreateRequestSSO("InvestCorpDocumentDetails", docDetailsItem);
         const mappedSections = this.mapSectionRowToItem(this.state.Sections);
         await Promise.all(
             mappedSections.map(async (section, index) => {
@@ -292,7 +313,7 @@ export class FullFormComponent extends Component<IProps, IState> {
             SectionID: "ABC123",
             DocumentID: this.props.docGUID
         }
-        let response: any = await UpdateRequestSSO(createItem, itemID);
+        let response: any = await UpdateRequestSSO(createItem, itemID, 'InvestcorpDocumentAssignees');
         if (!response) {
             throw new Error("Middle tier didn't respond");
         } else if (response.claims) {
@@ -304,7 +325,7 @@ export class FullFormComponent extends Component<IProps, IState> {
         let createItem = {
             IsActive: FlagPrideIntersexInclusiveProgress20Filled
         }
-        let response: any = await UpdateRequestSSO(createItem, itemID);
+        let response: any = await UpdateRequestSSO(createItem, itemID,'InvestcorpDocumentAssignees');
         if (!response) {
             throw new Error("Middle tier didn't respond");
         } else if (response.claims) {
@@ -312,16 +333,10 @@ export class FullFormComponent extends Component<IProps, IState> {
         }
     }
     public render(): ReactElement<IProps> {
+        const isDocInitiated = this.props.docInfo.DocStatus == "Initiated";
         return (
             <div className={`ms-Grid-row`} style={{ padding: 20 }}>
-                {/* <div className={`ms-Grid-col ms-sm12`} style={{ display: "flex" }}>
-                    <Textarea size="large" value={this.state.tempItemID} onChange={(event) => {
-                        this.setState({
-                            tempItemID: event.target.value
-                        })
-                    }} />
-
-                </div> */}
+                <p>{`Document Status : ${this.props.docInfo.DocStatus ? this.props.docInfo.DocStatus : ""}`}</p>
                 <div className={`ms-Grid-col ms-sm12`} style={{ display: "flex", alignItems: 'center', justifyContent: 'space-between' }}>
                     <DatePicker
                         label={"Due Date"}
@@ -331,9 +346,10 @@ export class FullFormComponent extends Component<IProps, IState> {
                         showMonthPickerAsOverlay={true}
                         placeholder="Select a date..."
                         ariaLabel="Select a date"
+                        formatDate={onFormatDate}
                         // DatePicker uses English strings by default. For localized apps, you must override this prop.
                         strings={defaultDatePickerStrings}
-                        value={this.state.docDueDate}
+                        value={this.props.docInfo.DueDate?new Date(this.props.docInfo.DueDate) : this.state.docDueDate}
                         onSelectDate={(date) => {
                             this.setState({ docDueDate: date });
                         }}
@@ -343,7 +359,7 @@ export class FullFormComponent extends Component<IProps, IState> {
                         style={{ marginLeft: 10, color: "#000", backgroundColor: "white" }}
                         text="Sync Section"
                         iconProps={{ iconName: "Reply" }}
-                        onClick={this.getData}
+                        onClick={this.syncSection}
                     />
                     {/* <DefaultButton
                         style={{ marginLeft: 10, color: "#000", backgroundColor: "white" }}
@@ -375,23 +391,36 @@ export class FullFormComponent extends Component<IProps, IState> {
                         ></SectionFormComponent>
                     })}
                 </div> */}
-                <SectionFormGrid sections={this.state.Sections}
-                    updateParentSectionState={this.updateSectionState} ></SectionFormGrid>
+                <SectionFormGrid
+                    isReadOnlyForm={isDocInitiated}
+                    sections={this.state.Sections}
+                    updateParentSectionState={this.updateSectionState}
+                ></SectionFormGrid>
                 <div className={`ms-Grid-col ms-sm12`} style={{ marginTop: 10, display: "flex", alignItems: 'center', justifyContent: 'space-between' }}>
                     <DefaultButton
                         style={{ color: "#000", backgroundColor: "white" }}
+                        disabled={!(this.state.Sections && this.state.Sections.length > 0)}
                         text="Initiate Document"
                         iconProps={{ iconName: "Reply" }}
                         onClick={this.createAllSections}
                     />
+                    {/* <DefaultButton
+                        style={{ color: "#000", backgroundColor: "white" }}
+                        disabled={!(this.state.Sections && this.state.Sections.length>0)}
+                        text="Add New Section"
+                        iconProps={{ iconName: "Reply" }}
+                        onClick={this.addNewSection}
+                    /> */}
                     <DefaultButton
                         style={{ color: "#000", backgroundColor: "white" }}
+                        disabled={!(this.state.Sections && this.state.Sections.length > 0)}
                         text="Save"
                         iconProps={{ iconName: "Reply" }}
                         onClick={this.createAllSections}
                     />
                     <DefaultButton
                         style={{ color: "#000", backgroundColor: "white" }}
+                        disabled={!(this.state.Sections && this.state.Sections.length > 0)}
                         text="Reset"
                         iconProps={{ iconName: "Reply" }}
                         onClick={this.resetAllSections}

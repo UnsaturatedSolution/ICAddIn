@@ -173,3 +173,31 @@ export async function checkGroup(req: any, res: any, next: any) {
       return;
     });
 }
+export async function currentUserDetails(req: any, res: any, next: any) {
+  const authorization: string = req.get("Authorization");
+  const data: string = req.get("data");
+  await getAccessToken(authorization)
+    .then(async (graphTokenResponse) => {
+      if (graphTokenResponse && (graphTokenResponse.claims || graphTokenResponse.error)) {
+        res.send(graphTokenResponse);
+      } else {
+        const graphToken: string = graphTokenResponse.access_token;
+        const graphUrlSegment: string = "/me?$select=*";
+        //const graphUrlSegment: string = "/users?$select=displayName,id";
+        console.log(graphUrlSegment);
+        const graphQueryParamSegment: string = process.env.QUERY_PARAM_SEGMENT || "";
+        const graphData = await getGraphData(graphToken, graphUrlSegment, graphQueryParamSegment);
+        if (graphData.code) {
+          console.log('userGroup check' + JSON.stringify(graphData));
+          next(createError(graphData.code, "Microsoft Graph error " + JSON.stringify(graphData)));
+        } else {
+          console.log('userGroup check' + graphData);
+          res.send(graphData);
+        }
+      }
+    })
+    .catch((err) => {
+      res.status(401).send(err.message);
+      return;
+    });
+}

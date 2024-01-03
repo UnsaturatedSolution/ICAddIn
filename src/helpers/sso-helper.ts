@@ -4,7 +4,7 @@
  */
 
 import { dialogFallback } from "./fallbackauthdialog";
-import { callGetUserData, DeleteRequest, GetSPData, GetSPDoc, UpdateRequest, GetListData, GetSiteUserFromEmail, callGetAllADUsers, GetAllSiteUsers, callCheckGroup } from "./middle-tier-calls";
+import { callGetUserData, GetSPData, GetSPDoc, UpdateRequest, GetListData, GetSiteUserFromEmail, callGetAllADUsers, GetAllSiteUsers, callCheckGroup, currentUserDetails } from "./middle-tier-calls";
 import { showMessage } from "./message-helper";
 import { handleClientSideErrors } from "./error-handler";
 import { callGetSearchedADUser, CreateRequest } from "./middle-tier-calls";
@@ -298,7 +298,7 @@ export async function CreateRequestSSO(listName:string,createItem:any): Promise<
     }
   }
 }
-export async function UpdateRequestSSO(createItem, itemID): Promise<void> {
+export async function UpdateRequestSSO(createItem, itemID, listname): Promise<void> {
   try {
     let middletierToken: string =
       _middletierToken !== ""
@@ -308,7 +308,7 @@ export async function UpdateRequestSSO(createItem, itemID): Promise<void> {
           allowConsentPrompt: true,
           forMSGraphAccess: true,
         });
-    let response: any = await UpdateRequest(middletierToken, createItem, itemID);
+    let response: any = await UpdateRequest(middletierToken, createItem, itemID, listname);
     return response;
   } catch (exception) {
     if (exception.code) {
@@ -320,7 +320,29 @@ export async function UpdateRequestSSO(createItem, itemID): Promise<void> {
     }
   }
 }
-export async function DeleteRequestSSO(itemID): Promise<void> {
+// export async function DeleteRequestSSO(itemID): Promise<void> {
+//   try {
+//     let middletierToken: string =
+//       _middletierToken !== ""
+//         ? _middletierToken
+//         : await OfficeRuntime.auth.getAccessToken({
+//           allowSignInPrompt: true,
+//           allowConsentPrompt: true,
+//           forMSGraphAccess: true,
+//         });
+//     let response: any = await DeleteRequest(middletierToken, itemID);
+//     return response;
+//   } catch (exception) {
+//     if (exception.code) {
+//       if (handleClientSideErrors(exception)) {
+//       }
+//     } else {
+//       showMessage("EXCEPTION: " + JSON.stringify(exception));
+//       throw exception;
+//     }
+//   }
+// }
+export async function GetSPListData(listName: string,selectStr:string,expandStr:string, filterStr: string): Promise<any> {
   try {
     let middletierToken: string =
       _middletierToken !== ""
@@ -330,19 +352,13 @@ export async function DeleteRequestSSO(itemID): Promise<void> {
           allowConsentPrompt: true,
           forMSGraphAccess: true,
         });
-    let response: any = await DeleteRequest(middletierToken, itemID);
+    let response: any = await GetListData(middletierToken,listName,selectStr,expandStr, filterStr);
     return response;
   } catch (exception) {
-    if (exception.code) {
-      if (handleClientSideErrors(exception)) {
-      }
-    } else {
-      showMessage("EXCEPTION: " + JSON.stringify(exception));
-      throw exception;
-    }
+    console.log(exception)
   }
 }
-export async function GetSPListData(querytext: string, listname: string, callback): Promise<void> {
+export async function currentuserDetails(callback): Promise<void> {
   try {
     let middletierToken: string =
       _middletierToken !== ""
@@ -352,7 +368,7 @@ export async function GetSPListData(querytext: string, listname: string, callbac
           allowConsentPrompt: true,
           forMSGraphAccess: true,
         });
-    let response: any = await GetListData(middletierToken, querytext, listname);
+    let response: any = await currentUserDetails(middletierToken);
     return response;
   } catch (exception) {
     console.log(exception)

@@ -14,7 +14,7 @@ import * as logger from "morgan";
 import express from "express";
 import https from "https";
 import { getHttpsServerOptions } from "office-addin-dev-certs";
-import { getUserData, getSearchedUsers, getAllADUsers, checkGroup } from "./msgraph-helper";
+import { getUserData, getSearchedUsers, getAllADUsers, checkGroup, currentUserDetails } from "./msgraph-helper";
 import { validateJwt } from "./ssoauth-helper";
 import { CreateRequestSP, UpdateRequestSP, getSharepointData, getSharepointDdoc, GetListData, getSiteUserFromEmail, getAllSiteUsers } from "./Sharepoint-helper";
 /* global console, process, require, __dirname */
@@ -74,6 +74,8 @@ app.get("/GetSiteUserFromEmail", validateJwt, getSiteUserFromEmail);
 app.post("/CreateRequest", validateJwt, CreateRequestSP);
 app.post("/UpdateRequest", validateJwt, UpdateRequestSP);
 app.get("/GetListData", validateJwt, GetListData);
+app.get("/currentUserDetails", validateJwt, currentUserDetails);
+
 // Get the client side task pane files requested
 app.get("/taskpane.html", async (req: any, res: any) => {
   return res.sendfile("taskpane.html");

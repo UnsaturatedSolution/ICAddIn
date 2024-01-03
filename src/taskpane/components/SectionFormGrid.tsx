@@ -13,17 +13,20 @@ import {
 } from "@fluentui/react-components";
 import type { ComboboxProps } from "@fluentui/react-components";
 import { GetAllSiteUsersSSO, getAllUsersSSO, getSearchUser } from "../../helpers/sso-helper";
-import { DatePicker, DayOfWeek, DefaultButton, DetailsList, Dialog, DialogFooter, IColumn, Pivot, PivotItem, PrimaryButton, SelectionMode, TooltipHost, defaultDatePickerStrings } from "@fluentui/react";
+import { DatePicker, DayOfWeek, DefaultButton, DetailsList, Dialog, DialogFooter, IColumn, Panel, Pivot, PivotItem, PrimaryButton, SelectionMode, TextField, Toggle, TooltipHost, defaultDatePickerStrings } from "@fluentui/react";
 import { SectionAssignment } from "./ISectionAssignment";
 import ShowADUserComponent from "./CustomPicker";
-import { contributorFormColumns, dialogContentProps, gridFormColumns } from "./SectionFormGridCont";
+import { contributorFormColumns, dialogContentProps, gridFormColumns, gridFormDoneColumn } from "../../constants/SectionFormGridCont";
 import ContributorDialog from "./ContributorDIalogContent";
+import { formatSectionName, mergeADSPUsers, onFormatDate } from "../../utilities/utility";
+
 
 const MyComponent = () => {
     return <div></div>;
 };
 
 export interface IProps extends ComboboxProps {
+    isReadOnlyForm: boolean;
     sections: SectionAssignment[];
     updateParentSectionState: Function;
 }
@@ -51,24 +54,13 @@ export class SectionFormGrid extends Component<IProps, IState> {
             GetAllSiteUsersSSO((result: any) => {
                 console.log(result);
                 const allSPUsers = JSON.parse(result).d.results;
-                const allUsers = this.mergeADSPUsers(allADUsers, allSPUsers);
+                const allUsers = mergeADSPUsers(allADUsers, allSPUsers);
                 this.setState({ allADUsers: allUsers });
             });
         });
     }
-    private mergeADSPUsers = (allADUsers, allSPUsers) => {
-        let returnArr = allADUsers.map((adUser) => {
-            let user = { ...adUser };
-            const matchedSPUser = allSPUsers.find((spUser) => spUser.Email == adUser.mail);
-            user["SPUSerId"] = matchedSPUser.Id;
-            return user;
-        })
-        return returnArr;
 
-    }
-    public updateContributorState = (newContributors) => {
-        this.setState({ tempContributors: newContributors });
-    }
+
     // public updatePeopleCB = (selectedSectionNumber, propValObj) => {
     //     this.updateParentSectionState(selectedSectionNumber, propValObj);
     // }
@@ -86,12 +78,14 @@ export class SectionFormGrid extends Component<IProps, IState> {
         //update contributors in props
         this.setState({ contributorPanelId: null, tempContributors: null });
     }
-    public onFormatDate = (date?: Date): string => {
-        return !date ? '' : date.getDate() + '/' + (date.getMonth() + 1) + '/' + (date.getFullYear() % 100);
-    };
+
+
     public renderGridItems = (item: SectionAssignment, index: number, column: IColumn) => {
         const fieldValue = item[column.fieldName];
         switch (column.key) {
+            case 'Done': {
+                return <Toggle checked={false} />
+            };
             case 'SNo': {
                 return <span>{item.SectionNumber}</span>
             };
@@ -102,28 +96,29 @@ export class SectionFormGrid extends Component<IProps, IState> {
                     calloutProps={{ gapSpace: 0 }}
                     styles={{ root: { display: 'inline-block' } }}
                 >
-                    <span aria-describedby={"SectionName"}>{item.SectionName}</span>
+                    <span aria-describedby={"SectionName"}>{`${formatSectionName(item.SectionName)}`}</span>
                 </TooltipHost>
             };
             case 'Primary': {
-                return <ShowADUserComponent sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"POwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
+                return <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"POwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
             };
             case 'Secondary': {
-                return <ShowADUserComponent sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"SOwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
+                return <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"SOwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
             };
             case 'TargetDate': {
                 return <DatePicker
+                    disabled={this.props.isReadOnlyForm}
                     firstDayOfWeek={DayOfWeek.Sunday}
                     firstWeekOfYear={1}
                     showMonthPickerAsOverlay={true}
                     placeholder="Select a date..."
                     ariaLabel="Select a date"
-                    formatDate={this.onFormatDate}
+                    formatDate={onFormatDate}
                     value={item.DeadLineDate}
                     onSelectDate={(date) => {
                         // let tempSectionItem = { ...this.props.sectionInfo };
                         // tempSectionItem.DeadLineDate = date;
-                        this.updateParentSectionState(item.SectionNumber, { "DeadLineDate": date })
+                        this.updateParentSectionState(item.SectionNumber, { ...item, ...{ "DeadLineDate": date } })
                     }}
                     // DatePicker uses English strings by default. For localized apps, you must override this prop.
                     strings={defaultDatePickerStrings}
@@ -133,14 +128,13 @@ export class SectionFormGrid extends Component<IProps, IState> {
             //     return <span>{item.Contributor.join(", ")}</span>
             // };
             case 'ManageContributors': {
-                return <DefaultButton
+                return this.props.isReadOnlyForm ? <DefaultButton
                     style={{ color: "#000", backgroundColor: "white" }}
-                    // iconProps={{ iconName: "Accept" }}
                     text="Manage"
                     onClick={() => {
-                        this.setState({ contributorPanelId: index })
+                        this.setState({ contributorPanelId: index });
                     }}
-                />
+                /> : null;
             };
             default: {
                 return <span>{fieldValue}</span>
@@ -148,16 +142,17 @@ export class SectionFormGrid extends Component<IProps, IState> {
         }
     }
     public render(): ReactElement<IProps> {
+        const contributorPanelSectionInfo: SectionAssignment[] = this.props.sections.filter((item, index) => { return index == this.state.contributorPanelId })
         return (
             <div className={`ms-Grid-col ms-sm12`}>
                 <DetailsList
-                    columns={gridFormColumns}
+                    columns={this.props.isReadOnlyForm ? [...gridFormDoneColumn, ...gridFormColumns] : gridFormColumns}
                     items={this.props.sections}
                     onRenderItemColumn={this.renderGridItems}
                     selectionMode={SelectionMode.none}
                     compact={true}
                 ></DetailsList>
-                <Dialog
+                {/* <Dialog
                     hidden={this.state.contributorPanelId == null}
                     onDismiss={() => { this.setState({ contributorPanelId: null, tempContributors: null }) }}
                     dialogContentProps={dialogContentProps}
@@ -170,7 +165,35 @@ export class SectionFormGrid extends Component<IProps, IState> {
                             this.setState({ contributorPanelId: null, tempContributors: null });
                         }} text="Cancel" />
                     </DialogFooter>
-                </Dialog>
+                </Dialog> */}
+                <Panel
+                    isOpen={this.state.contributorPanelId != null}
+                    onDismiss={() => { this.setState({ contributorPanelId: null, tempContributors: null }) }}
+                    headerText="Panel with footer at bottom"
+                    closeButtonAriaLabel="Close"
+                    onRenderFooterContent={() => {
+                        return <div>
+                            <PrimaryButton onClick={this.updateContributors} text="Ok" />
+                            <DefaultButton onClick={() => {
+                                this.setState({ contributorPanelId: null, tempContributors: null });
+                            }} text="Cancel" />
+                        </div>
+                    }}
+                    // Stretch panel content to fill the available height so the footer is positioned
+                    // at the bottom of the page
+                    isFooterAtBottom={true}
+                >
+                    {this.state.contributorPanelId != null &&
+                        <ContributorDialog
+                            sectionInfo={contributorPanelSectionInfo ? contributorPanelSectionInfo[0] : null}
+                            updateParentContributorState={this.updateContributors}
+                            isReadOnlyForm={this.props.isReadOnlyForm}
+                            tempContributors={this.state.tempContributors}
+                            allADUsers={this.state.allADUsers}
+                            // updateParentSectionState={this.props.updateParentSectionState}
+                        ></ContributorDialog>
+                    }
+                </Panel>
                 {/* <h3>{`Section ${this.props.sectionInfo.SectionNumber}`}</h3>
                 <div>
                     <ShowADUserComponent fieldName="Primary Owner" isMandatory={true}></ShowADUserComponent>
@@ -197,7 +220,7 @@ export class SectionFormGrid extends Component<IProps, IState> {
                         strings={defaultDatePickerStrings}
                     />
                 </div> */}
-            </div>
+            </div >
         );
     }
 }

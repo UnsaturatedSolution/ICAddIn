@@ -3,15 +3,17 @@ import { Combobox, Label, Option, Persona, useId, } from "@fluentui/react-compon
 import type { ComboboxProps } from "@fluentui/react-components";
 import { GetSiteUserFromEmailSSO, getSearchUser } from "../../helpers/sso-helper";
 import { IComboBox, IComboBoxOption } from "@fluentui/react";
+import { SectionAssignment } from "./ISectionAssignment";
 
 const MyComponent = () => {
   return <div></div>;
 };
 
 export interface IProps extends ComboboxProps {
+  isReadOnlyForm: boolean;
   fieldState: string;
   fieldName: string;
-  sectionInfo:any;
+  sectionInfo: any;
   isMandatory: boolean;
   sectionNumber: number;
   updatePeopleCB: Function;
@@ -34,7 +36,7 @@ export class ShowADUserComponent extends Component<IProps, IState> {
     super(props);
 
     this.state = {
-      options: [],
+      options: this.props.allADUsers,
     };
   }
   private onComboBoxChange: ComboboxProps["onChange"] = (event) => {
@@ -59,16 +61,18 @@ export class ShowADUserComponent extends Component<IProps, IState> {
   };
   private oncomboBoxSelect = (data) => {
     console.log(data);
-    let updatedObj = {};
-    updatedObj[`${this.props.fieldState}Email`] = data.optionText;    
-    updatedObj[`${this.props.fieldState}ID`] = data.optionValue;
-    this.props.updatePeopleCB(this.props.sectionNumber, updatedObj);
-    // GetSiteUserFromEmailSSO(data.optionValue, (result: any) => {
-    //   console.log(result);
-    //   updatedObj[`${this.props.fieldState}ID`] = JSON.parse(result)?.d?.Id;
-    //   this.props.updatePeopleCB(this.props.sectionNumber, updatedObj);
-    // });
-    //JSON.parse(response).d.Id
+    if (this.props.fieldState == "Contributors") {
+      this.props.updatePeopleCB({
+        ContributorDisplayName: data.optionText,
+        ContributorID: data.optionValue
+      });
+    }
+    else {
+      let updatedObj: SectionAssignment = null;
+      updatedObj[`${this.props.fieldState}DisplayName`] = data.optionText;
+      updatedObj[`${this.props.fieldState}ID`] = data.optionValue;
+      this.props.updatePeopleCB(this.props.sectionNumber, updatedObj);
+    }
   }
 
   public render(): ReactElement<IProps> {
@@ -78,15 +82,17 @@ export class ShowADUserComponent extends Component<IProps, IState> {
         }
         {this.props.fieldName != "" && this.props.isMandatory && <span style={{ color: "red" }}>*</span>}
         <Combobox
+          disabled={this.props.isReadOnlyForm}
           freeform
           onChange={this.onComboBoxChange}
           style={{ width: "100%" }}
           // required={this.props.isMandatory}
           onOptionSelect={(event, data) => this.oncomboBoxSelect(data)}
+          value={this.props.sectionInfo[`${this.props.fieldState}DisplayName`]}
           selectedOptions={[this.props.sectionInfo[`${this.props.fieldState}ID`]]}
         >
-          {this.state.options.map((option) => (
-            <Option text={option.displayName} value={option.SPUSerId}>
+          {this.state.options.map((option, index) => (
+            <Option text={option.displayName} value={option.SPUSerId} key={index}>
               <Persona avatar={{ color: "colorful", "aria-hidden": true }} name={option.displayName} />
             </Option>
           ))}

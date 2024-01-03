@@ -1,9 +1,11 @@
 import React, { Component, ReactElement } from "react";
 import type { ComboboxProps } from "@fluentui/react-components";
-import { DetailsList, IColumn } from "@fluentui/react";
-import { GetSPListData } from "../../helpers/sso-helper";
+import { DefaultButton, DetailsList, IColumn } from "@fluentui/react";
+import { UpdateRequestSSO, GetSPListData } from "../../helpers/sso-helper";
 export interface IProps extends ComboboxProps {
     sectionInfo: any[];
+    documentID: string;
+    currentUserEmail: string;
 }
 
 const listColumns: IColumn[] = [
@@ -49,6 +51,14 @@ export class SectionDetails extends Component<IProps> {
                 return item[column.fieldName];
         }
     }
+    private sendMail = async () => {
+        const query = `$select=*&$filter=DocumentID eq '${this.props.documentID}'&$top=1&$orderby=Modified desc`
+        const documentDetails = await GetSPListData("InvestCorpDocumentDetails", "*", "", query);
+        const result = JSON.parse(documentDetails);
+        const ItemID = documentDetails ? result.d.results[0]["Id"] : 0;
+        const updateDetails = { SendReport: true, SendReportToEmailAddr: this.props.currentUserEmail }
+        await UpdateRequestSSO(updateDetails, ItemID, 'InvestCorpDocumentDetails');
+    }
     public render(): ReactElement<IProps> {
         return (
             <div className={`ms-Grid-row`} >
@@ -59,7 +69,12 @@ export class SectionDetails extends Component<IProps> {
                     //items={this.state.approvalHistoryItems} 
                     onRenderItemColumn={this.onRenderItem}
                 />
-
+                <DefaultButton
+                    style={{ color: "#000", backgroundColor: "white", alignItems: "left" }}
+                    text="Mail Report"
+                    iconProps={{ iconName: "MailAttached" }}
+                    onClick={this.sendMail}
+                />
                 {/* </div> */}
             </div >
         );

@@ -34,7 +34,20 @@ export async function callCheckGroup(middletierToken: string): Promise<any> {
     throw err;
   }
 }
-
+export async function currentUserDetails(middletierToken: string): Promise<any> {
+  try {
+    const response = await $.ajax({
+      type: "GET",
+      url: `/currentUserDetails`,
+      headers: { Authorization: "Bearer " + middletierToken },
+      cache: false,
+    });
+    return response;
+  } catch (err) {
+    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+    throw err;
+  }
+}
 export async function callGetAllADUsers(middletierToken: string): Promise<any> {
   try {
     const response = await $.ajax({
@@ -133,12 +146,12 @@ export async function CreateRequest(middletierToken: string, listName:string,cre
     throw err;
   }
 }
-export async function UpdateRequest(middletierToken: string, createItem, itemID): Promise<any> {
+export async function UpdateRequest(middletierToken: string, createItem, itemID, listName): Promise<any> {
   try {
     const response = await $.ajax({
       type: "POST",
       url: `/UpdateRequest`,
-      headers: { Authorization: "Bearer " + middletierToken, Data: JSON.stringify(createItem), Itemid: `${itemID}` },
+      headers: { Authorization: "Bearer " + middletierToken, Data: JSON.stringify(createItem), Itemid: `${itemID}`, ListName: listName },
       cache: false,
     });
     return response;
@@ -147,28 +160,26 @@ export async function UpdateRequest(middletierToken: string, createItem, itemID)
     throw err;
   }
 }
-export async function DeleteRequest(middletierToken: string, itemID): Promise<any> {
+// export async function DeleteRequest(middletierToken: string, itemID): Promise<any> {
+//   try {
+//     const response = await $.ajax({
+//       type: "POST",
+//       url: `/DeleteRequest`,
+//       headers: { Authorization: "Bearer " + middletierToken, Itemid: `${itemID}` },
+//       cache: false,
+//     });
+//     return response;
+//   } catch (err) {
+//     showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+//     throw err;
+//   }
+// }
+export async function GetListData(middletierToken: string,listName: string,selectStr:string,expandStr:string, filterStr: string ): Promise<any> {
   try {
-    const response = await $.ajax({
-      type: "POST",
-      url: `/DeleteRequest`,
-      headers: { Authorization: "Bearer " + middletierToken, Itemid: `${itemID}` },
-      cache: false,
-    });
-    return response;
-  } catch (err) {
-    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
-    throw err;
-  }
-}
-export async function GetListData(middletierToken: string, searchText: string, listname: string): Promise<any> {
-  try {
-    console.log('quuery string in middle tier' + searchText);
-    console.log('quuery string in middle tier listname' + listname);
     const response = await $.ajax({
       type: "GET",
       url: `/GetListData`,
-      headers: { Authorization: "Bearer " + middletierToken, searchText: searchText },
+      headers: { Authorization: "Bearer " + middletierToken,listName:listName,selectStr:selectStr,expandStr:expandStr, filterStr: filterStr },
       cache: false,
     });
     return response;

@@ -7,13 +7,14 @@ export interface SectionAssignment {
   SOwnerID: number;
   SOwnerEmail: string;
   SOwnerDisplayName: string,
-  Contributor: Contributors[];
+  Contributors: Contributor[];
   DeadLineDate: Date;
   DocumentID: string;
   SectionID: string;
 }
 
-export interface Contributors {
-  Email: string;
+export interface Contributor {
+  ContributorEmail?: string;
+  ContributorDisplayName: string;
   ContributorID: number;
 }

@@ -1,20 +1,18 @@
 import * as spauth from "node-sp-auth";
 import * as request from "request-promise";
+import * as appConst from "../constants/appConst";
+
 
 export async function getSharepointData(req: any, res: any, next: any) {
   spauth
-    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
-      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
-      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
-      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
-    })
+    .getAuth(`${appConst.siteUrl}`, appConst.spAuthInfo)
     .then((options) => {
       //perform request with any http-enabled library (request-promise in a sample below):
       let headers = options.headers;
       headers["Accept"] = "application/json;odata=verbose";
       request
         .get({
-          url: "https://vichitra.sharepoint.com/sites/dev/_api/web",
+          url: `${appConst.siteUrl}_api/web`,
           headers: headers,
         })
         .then((response) => {
@@ -25,18 +23,14 @@ export async function getSharepointData(req: any, res: any, next: any) {
 }
 export async function getAllSiteUsers(req: any, res: any, next: any) {
   spauth
-    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
-      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
-      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
-      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
-    })
+    .getAuth(`${appConst.siteUrl}`, appConst.spAuthInfo)
     .then((options) => {
       //perform request with any http-enabled library (request-promise in a sample below):
       let headers = options.headers;
       headers["Accept"] = "application/json;odata=verbose";
       request
         .get({
-          url: `https://vichitra.sharepoint.com/sites/dev/_api/web/SiteUsers?$select=*,Id&$top=5000`,
+          url:`${appConst.siteUrl}_api/web/SiteUsers?$select=*,Id&$top=5000`,
           headers: headers,
         })
         .then((response) => {
@@ -48,18 +42,14 @@ export async function getAllSiteUsers(req: any, res: any, next: any) {
 export async function getSiteUserFromEmail(req: any, res: any, next: any) {
   let userEmail = req.get("Useremail");
   spauth
-    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
-      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
-      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
-      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
-    })
+    .getAuth(`${appConst.siteUrl}`, appConst.spAuthInfo)
     .then((options) => {
       //perform request with any http-enabled library (request-promise in a sample below):
       let headers = options.headers;
       headers["Accept"] = "application/json;odata=verbose";
       request
         .get({
-          url: `https://vichitra.sharepoint.com/sites/dev/_api/web/SiteUsers/getByEmail('${userEmail}')?$select=*,Id`,
+          url:`${appConst.siteUrl}_api/web/SiteUsers/getByEmail('${userEmail}')?$select=*,Id`,
           headers: headers,
         })
         .then((response) => {
@@ -71,18 +61,14 @@ export async function getSiteUserFromEmail(req: any, res: any, next: any) {
 export async function getSharepointDdoc(req: any, res: any, next: any) {
   let docUrl = req.get("Docurl");
   spauth
-    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
-      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
-      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
-      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
-    })
+    .getAuth(`${appConst.siteUrl}`, appConst.spAuthInfo)
     .then((options) => {
       //perform request with any http-enabled library (request-promise in a sample below):
       let headers = options.headers;
       headers["Accept"] = "application/json;odata=verbose";
       request
         .get({
-          url: `https://vichitra.sharepoint.com/sites/dev/_api/Web/GetFileByServerRelativePath(decodedurl='${docUrl}')`,
+          url: `${appConst.siteUrl}_api/Web/GetFileByServerRelativePath(decodedurl='${docUrl}')`,
           headers: headers,
         })
         .then((response) => {
@@ -92,17 +78,13 @@ export async function getSharepointDdoc(req: any, res: any, next: any) {
     });
 }
 
-export async function CreateRequestSP(req, next, res) {
+export async function CreateRequestSP(req, res,next) {
   let data = req.get("Data");
   let listName = req.get("ListName");
   console.log(data);
 
   spauth
-    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
-      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
-      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
-      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
-    })
+    .getAuth(`${appConst.siteUrl}`, appConst.spAuthInfo)
     .then((options) => {
       //perform request with any http-enabled library (request-promise in a sample below):
       let headers = options.headers;
@@ -110,26 +92,24 @@ export async function CreateRequestSP(req, next, res) {
         (headers["Content-Type"] = "application/json"),
         request
           .post({
-            url: `https://vichitra.sharepoint.com/sites/dev/_api/web/lists/getbytitle('${listName}')/items`,
+            url: `${appConst.siteUrl}_api/web/lists/getbytitle('${listName}')/items`,
             headers: headers,
             body: data,
           })
           .then((response) => {
             console.log(response);
+            res.send(response);
           });
     });
 }
-export async function UpdateRequestSP(req, next, res) {
+export async function UpdateRequestSP(req, res, next) {
   let data = req.get("Data");
   let itemID = req.get("Itemid");
+  let listName = req.get("ListName");
   console.log(data);
 
   spauth
-    .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
-      clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
-      clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
-      realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
-    })
+    .getAuth(`${appConst.siteUrl}`, appConst.spAuthInfo)
     .then((options) => {
       //perform request with any http-enabled library (request-promise in a sample below):
       let headers = options.headers;
@@ -139,7 +119,7 @@ export async function UpdateRequestSP(req, next, res) {
         (headers["X-HTTP-Method"] = "MERGE"),
         request
           .post({
-            url: `https://vichitra.sharepoint.com/sites/dev/_api/web/lists/getbytitle('InvestcorpDocumentAssignees')/items(${itemID})`,
+            url: `${appConst.siteUrl}_api/web/lists/getbytitle('${listName}')/items(${itemID})`,
             headers: headers,
             body: data,
           })
@@ -151,21 +131,20 @@ export async function UpdateRequestSP(req, next, res) {
 export async function GetListData(req: any, res: any) {
   try {
     /*  console.log('req' + JSON.stringify(req) + 'res' + JSON.stringify(res)); */
-    let filterQuery = req.get("searchText");
-    console.log('querytext' + filterQuery);
+    let listName = req.get("listName");
+    let selectStr = req.get("selectStr");
+    let expandStr = req.get("expandStr");
+    let filterStr = req.get("filterStr");
+    let urlStr = `${appConst.siteUrl}_api/web/lists/getbyTitle('${listName}')/items?$select=${selectStr}${expandStr != ""?`&$expand=${expandStr}`:""}${filterStr != ""?`&$filter=${filterStr}`:""}`;
     spauth
-      .getAuth("https://vichitra.sharepoint.com/sites/dev/", {
-        clientId: "6dc9bad4-bea5-46f1-a47e-6430d2c83ae4",
-        clientSecret: "qc0syH8nllqvMlKON7wmR9S8fJ2k/GTVJXqv2PiS0Vc=",
-        realm: "6621c5f1-da8a-4ee5-9708-7b6b5334d53b",
-      })
+      .getAuth(`${appConst.siteUrl}`, appConst.spAuthInfo)
       .then((options) => {
         //perform request with any http-enabled library (request-promise in a sample below):
         let headers = options.headers;
         headers["Accept"] = "application/json;odata=verbose";
         request
           .get({
-            url: `https://vichitra.sharepoint.com/sites/dev/_api/web/lists/getbyTitle('InvestcorpDocumentAssignees')/items?$select=*,PrimaryOwner/Title,SecondaryOwner/Title&$expand=PrimaryOwner,SecondaryOwner&$filter=` + filterQuery,
+            url:urlStr,
             headers: headers,
             method: "GET",
           })
