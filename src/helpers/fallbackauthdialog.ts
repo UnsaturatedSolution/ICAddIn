@@ -9,6 +9,7 @@
 import { Configuration, LogLevel, PublicClientApplication, RedirectRequest } from "@azure/msal-browser";
 import { callGetUserData } from "./middle-tier-calls";
 import { showMessage } from "./message-helper";
+import * as appConst from "../constants/appConst";
 
 const clientId = "{application GUID here}"; //This is your client ID
 const accessScope = `api://${window.location.host}/${clientId}/access_as_user`;
@@ -21,7 +22,7 @@ const msalConfig: Configuration = {
   auth: {
     clientId: clientId,
     
-    authority: "https://login.microsoftonline.com/common",
+    authority: `https://login.microsoftonline.com/${appConst.ssoAuthInfo.tenant}`,
     redirectUri: "https://localhost:{PORT}/fallbackauthdialog.html", // Update config script to enable `https://${window.location.host}/fallbackauthdialog.html`,
     navigateToLoginRequestUrl: false,
   },

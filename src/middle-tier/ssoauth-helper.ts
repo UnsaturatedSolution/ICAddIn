@@ -1,5 +1,5 @@
-const DISCOVERY_KEYS_ENDPOINT = "https://login.microsoftonline.com/common/discovery/v2.0/keys";
-
+import * as appConst from "../constants/appConst";
+const DISCOVERY_KEYS_ENDPOINT = `https://login.microsoftonline.com/${appConst.ssoAuthInfo.tenant}/discovery/v2.0/keys`;
 export async function getAccessToken(authorization: string): Promise<any> {
   if (!authorization) {
     let error = new Error("No Authorization header was found.");
@@ -24,7 +24,7 @@ export async function getAccessToken(authorization: string): Promise<any> {
     };
 
     const stsDomain: string = "https://login.microsoftonline.com";
-    const tenant: string = "common";
+    const tenant: string = appConst.ssoAuthInfo.tenant;
     const tokenURLSegment: string = "oauth2/v2.0/token";
     const encodedForm = form(formParams);
 
@@ -47,7 +47,7 @@ export function validateJwt(req, res, next): void {
     const token = authHeader.split(" ")[1];
 
     const validationOptions = {
-      audience: process.env.CLIENT_ID,
+      audience: appConst.ssoAuthInfo.validationAUdience,
     };
 
     jwt.verify(token, getSigningKeys, validationOptions, (err) => {
