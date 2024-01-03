@@ -21,11 +21,12 @@ import { contributorFormColumns, dialogContentProps, gridFormColumns } from "../
 
 export interface IProps extends ComboboxProps {
     // contributors: any[];
+    contributorPanelId: number;
     updateParentContributorState: Function;
     isReadOnlyForm: boolean;
     sectionInfo: SectionAssignment;
     allADUsers: any[];
-    tempContributors:any;
+    tempContributors: any;
 }
 
 export interface IState {
@@ -38,29 +39,28 @@ export class ContributorDialog extends Component<IProps, IState> {
         this.state = {
         };
     }
-    public updateContributorState = (actionType,newContributor) => {
+    public updateContributorState = (newContributor) => {
         let tempCon = [...this.props.tempContributors];
-        if(actionType == "Add"){
-            tempCon.push(newContributor);
-        }
-        else if(actionType == "Delete"){
-            tempCon.push(newContributor);
-        }
-        this.props.updateParentContributorState(this.props.sectionInfo.SectionNumber,{ tempContributors: tempCon });
+        tempCon.push(newContributor);
+        this.props.updateParentContributorState(tempCon);
     }
-    public renderGridItems = (item: SectionAssignment, index: number, column: IColumn) => {
+    public renderGridItems = (item, index: number, column: IColumn) => {
         const fieldValue = item[column.fieldName];
         switch (column.key) {
+            case 'Contributor': {
+                return <span id={item.ContributorID}>{item.ContributorDisplayName}</span>
+                // return <span id={item.ContributorID}>{item.ContributorDisplayName}</span>
+            };
             case 'Action': {
                 return <DefaultButton
                     style={{ color: "#000", backgroundColor: "white" }}
                     // iconProps={{ iconName: "Accept" }}
                     text="Delete"
                     onClick={() => {
-                        // let newContributors = this.props.contributors.map((item, i) => {
-                        //     return index != i;
-                        // })
-                        // this.props.updateParentContributorState(newContributors);
+                        let tempCon = [...this.props.tempContributors];
+                        tempCon.splice(index, 1);
+                        this.props.updateParentContributorState(tempCon);
+
                     }}
                 />
             };
@@ -73,12 +73,12 @@ export class ContributorDialog extends Component<IProps, IState> {
         return (
             <div className={`ms-Grid-row`}>
                 <div className={`ms-Grid-col ms-sm12`} style={{ paddingBottom: 10 }}>
-                    <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} sectionInfo={this.props.sectionInfo} allADUsers={this.props.allADUsers} updatePeopleCB={this.props.updateParentContributorState} sectionNumber={this.props.sectionInfo.SectionNumber} fieldState={"Contributor"} fieldName="" isMandatory={false}></ShowADUserComponent>
+                    <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} sectionInfo={this.props.sectionInfo} allADUsers={this.props.allADUsers} updatePeopleCB={this.updateContributorState} sectionNumber={this.props.contributorPanelId} fieldState={"Contributor"} fieldName="" isMandatory={false}></ShowADUserComponent>
                 </div>
                 <div className={`ms-Grid-col ms-sm12`} style={{ paddingBottom: 10 }}>
                     <DetailsList
                         columns={contributorFormColumns}
-                        items={[]}
+                        items={this.props.tempContributors}
                         onRenderItemColumn={this.renderGridItems}
                         selectionMode={SelectionMode.none}
                         compact={true}

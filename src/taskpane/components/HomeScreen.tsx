@@ -83,14 +83,14 @@ export class HomeScreenComponent extends Component<IProps, IState> {
     let tempState = { ...this.state };
     const currEmail = await this.currentUserDetails();
     tempState = { ...tempState, ...{ currentUserEmail: currEmail } };
-    await this.checkUser();
+    // await this.checkUser();
     const docGUID = await this.getDocumentMetadata();
     tempState = { ...tempState, ...{ docGUID: docGUID } };
     const docInfo = await this.GetSPDocDetails(docGUID);
     if (docInfo) {
       tempState = { ...tempState, ...{ docInfo: docInfo } };
       const sectionInfo = await this.GetSPAssigneeData(docGUID);
-      const mappedSectionInfo = this.mapSectionItemToRow(sectionInfo, docGUID)
+      const mappedSectionInfo: SectionAssignment[] = this.mapSectionItemToRow(sectionInfo, docGUID)
       const sortedSectionInfo = mappedSectionInfo.sort((a, b) => a.SectionNumber - b.SectionNumber)
       tempState = { ...tempState, ...{ SectionsDetails: sectionInfo, mappedSectionInfo: sortedSectionInfo } };
     }
@@ -98,7 +98,15 @@ export class HomeScreenComponent extends Component<IProps, IState> {
   }
   public mapSectionItemToRow = (sectionInfo, docGUID) => {
     return sectionInfo.map((item, index) => {
-      return {
+      const contributors = item.Contributors.results && item.Contributors.results.length > 0 ? item.Contributors.results.map(item => {
+        return {
+          ContributorID: item.Id,
+          ContributorDisplayName: item.Title
+        }
+      }) : [];
+
+      const sectionAssignment: SectionAssignment = {
+        itemID: item.Id,
         SectionNumber: item.SectionSequence,
         SectionName: item.SectionName,
         POwnerID: item.PrimaryOwnerId ? item.PrimaryOwnerId : 0,
@@ -107,11 +115,12 @@ export class HomeScreenComponent extends Component<IProps, IState> {
         SOwnerID: item.SecondaryOwnerId ? item.SecondaryOwnerId : 0,
         SOwnerDisplayName: item.SecondaryOwner.Title,
         SOwnerEmail: "",
-        Contributors: [],
-        DeadLineDate: item.TargetDate ? new Date(item.TargetDate) : "",
+        Contributors: contributors,
+        DeadLineDate: item.TargetDate ? new Date(item.TargetDate) : null,
         DocumentID: item.DocumentID ? item.DocumentID : docGUID,
         SectionID: item.SectionID ? item.SectionID : ""
       }
+      return sectionAssignment;
     })
   }
   public GetSPDocDetails = async (docGUID) => {
@@ -128,7 +137,7 @@ export class HomeScreenComponent extends Component<IProps, IState> {
   }
   public GetSPAssigneeData = async (docGUID) => {
     const filter = `DocumentID eq '` + docGUID + `' and IsActive eq 1`;
-    let response: any = await GetSPListData(appConst.lists.assigneeDetails, "*,PrimaryOwner/Title,SecondaryOwner/Title", "PrimaryOwner,SecondaryOwner", filter);
+    let response: any = await GetSPListData(appConst.lists.assigneeDetails, "*,PrimaryOwner/Title,SecondaryOwner/Title,Contributors/Id,Contributors/Title", "PrimaryOwner,SecondaryOwner,Contributors", filter);
     const result = JSON.parse(response);
     let sectionInfo = [];
     if (!response) {
@@ -156,14 +165,14 @@ export class HomeScreenComponent extends Component<IProps, IState> {
       return docGUID;
     }
   }
-  public checkUser = async () => {
-    let response: any = await checkGroup({});
-    console.log(response);
-    let isGroup = [];
-    if (response && response.value.length > 0)
-      isGroup = response.value.filter((res) => { return res.displayName == 'CoCoInitiatorGrp' });
-    isGroup.length > 0 ? console.log('Access Granted') : console.log('Access Denied');
-  }
+  // public checkUser = async () => {
+  //   let response: any = await checkGroup({});
+  //   console.log(response);
+  //   let isGroup = [];
+  //   if (response && response.value.length > 0)
+  //     isGroup = response.value.filter((res) => { return res.displayName == 'CoCoInitiatorGrp' });
+  //   isGroup.length > 0 ? console.log('Access Granted') : console.log('Access Denied');
+  // }
   public currentUserDetails = async () => {
     let response: any = await currentuserDetails({});
     console.log(response);

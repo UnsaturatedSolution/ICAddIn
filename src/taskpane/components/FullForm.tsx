@@ -94,6 +94,7 @@ export class FullFormComponent extends Component<IProps, IState> {
     // }
     public mapSectionRowToItem = (sectionInfo) => {
         return sectionInfo.map((item, index) => {
+            const constributorsId = item.Contributors.map(contributor=>contributor.ContributorID);
             return {
                 SectionSequence: item.SectionNumber,
                 SectionName: item.SectionName ? item.SectionName : "",
@@ -107,7 +108,8 @@ export class FullFormComponent extends Component<IProps, IState> {
                 // Comments: "Comms",
                 TargetDate: item.DeadLineDate ? new Date(item.DeadLineDate) : null,
                 DocumentID: item.DocumentID ? item.DocumentID : this.props.docGUID,
-                SectionID: item.SectionID ? item.SectionID : ""
+                SectionID: item.SectionID ? item.SectionID : "",
+                ContributorsId:{ "results": constributorsId }
             }
         })
     }
@@ -173,7 +175,7 @@ export class FullFormComponent extends Component<IProps, IState> {
                         SectionName: sectionName,
                         POwnerID: 0,
                         POwnerEmail: "",
-                        POwneDisplayName: "",
+                        POwnerDisplayName: "",
                         SOwnerID: 0,
                         SOwnerEmail: "",
                         SOwnerDisplayName: "",
@@ -194,7 +196,7 @@ export class FullFormComponent extends Component<IProps, IState> {
                 ...section,
                 POwnerID: 0,
                 POwnerEmail: "",
-                POwneDisplayName: "",
+                POwnerDisplayName: "",
                 SOwnerID: 0,
                 SOwnerEmail: "",
                 SOwnerDisplayName: "",
@@ -212,7 +214,7 @@ export class FullFormComponent extends Component<IProps, IState> {
     //         SectionName: "",
     //         POwnerID: 0,
     //         POwnerEmail: "",
-    //         POwneDisplayName: "",
+    //         POwnerDisplayName: "",
     //         SOwnerID: 0,
     //         SOwnerEmail: "",
     //         SOwnerDisplayName: "",
@@ -262,6 +264,7 @@ export class FullFormComponent extends Component<IProps, IState> {
             DueDate: this.state.docDueDate,
             ShouldFreezeDoc: true
         };
+        
         CreateRequestSSO(appConst.lists.documentDetails, docDetailsItem);
         const mappedSections = this.mapSectionRowToItem(this.state.Sections);
         await Promise.all(
@@ -297,33 +300,32 @@ export class FullFormComponent extends Component<IProps, IState> {
     //         console.log("data saved");
     //     }
     // }
-    public updateSectionItem = async () => {
-        let itemID = `${this.state.tempItemID}`;
-        let createItem = {
-            Title: "API Created Item Updated",
-            SectionName: "Section 1",
-            SectionSequence: 1,
-            // PrimaryOwner: "Harsha@vc.com",
-            // SecondaryOwner: "Harsha@vc.com",
-            // Contributors: "Harsha@vc.com",
-            Status: "NotStarted",
-            // DocumentID: 12,
-            Comments: "Comms",
-            TargetDate: new Date(),
-            SectionID: "ABC123",
-            DocumentID: this.props.docGUID
-        }
-        let response: any = await UpdateRequestSSO(createItem, itemID,appConst.lists.assigneeDetails);
-        if (!response) {
-            throw new Error("Middle tier didn't respond");
-        } else if (response.claims) {
-            console.log("data saved");
-        }
-    }
+    // public updateSectionItem = async () => {
+    //     let itemID = `${this.state.tempItemID}`;
+    //     const constributorsId = 
+    //     let updateItem = {ContributorsId: { "results": ["36","42"] }
+    //     }
+    //     let response: any = await UpdateRequestSSO(createItem, itemID,appConst.lists.assigneeDetails);
+    //     if (!response) {
+    //         throw new Error("Middle tier didn't respond");
+    //     } else if (response.claims) {
+    //         console.log("data saved");
+    //     }
+    // }
+    // public updateContributors = async () => {
+    //     const contributorPanelSectionInfo: SectionAssignment[] = this.props.sections.filter((item, index) => { return index == this.state.contributorPanelId });
+    //     const constributorsId = contributorPanelSectionInfo[0].Contributors.map(contributor=>`${contributor.ContributorID}`);
+    //     let response: any = await UpdateRequestSSO({ContributorsId:{ "results": constributorsId }}, contributorPanelSectionInfo[0].itemID,appConst.lists.assigneeDetails);
+    //     if (!response) {
+    //         throw new Error("Middle tier didn't respond");
+    //     } else if (response.claims) {
+    //         console.log("data saved");
+    //     }
+    // }
     public deleteSectionItem = async () => {
         let itemID = `${this.state.tempItemID}`;
         let createItem = {
-            IsActive: FlagPrideIntersexInclusiveProgress20Filled
+            IsActive: false
         }
         let response: any = await UpdateRequestSSO(createItem, itemID,appConst.lists.assigneeDetails);
         if (!response) {
@@ -333,7 +335,8 @@ export class FullFormComponent extends Component<IProps, IState> {
         }
     }
     public render(): ReactElement<IProps> {
-        const isDocInitiated = this.props.docInfo.DocStatus == "Initiated";
+        // const isDocInitiated = this.props.docInfo.DocStatus == "Initiated";
+        const isDocInitiated =false;
         return (
             <div className={`ms-Grid-row`} style={{ padding: 20 }}>
                 <p>{`Document Status : ${this.props.docInfo.DocStatus ? this.props.docInfo.DocStatus : ""}`}</p>

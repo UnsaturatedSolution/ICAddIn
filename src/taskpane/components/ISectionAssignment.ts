@@ -1,9 +1,10 @@
 export interface SectionAssignment {
+  itemID:number;
   SectionNumber: number;
   SectionName: string;
   POwnerID: number;
   POwnerEmail: string;
-  POwneDisplayName: string,
+  POwnerDisplayName: string,
   SOwnerID: number;
   SOwnerEmail: string;
   SOwnerDisplayName: string,

@@ -47,7 +47,7 @@ export function validateJwt(req, res, next): void {
     const token = authHeader.split(" ")[1];
 
     const validationOptions = {
-      audience: appConst.ssoAuthInfo.validationAUdience,
+      audience: process.env.CLIENT_ID,
     };
 
     jwt.verify(token, getSigningKeys, validationOptions, (err) => {

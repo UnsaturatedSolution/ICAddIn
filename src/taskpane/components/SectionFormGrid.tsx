@@ -12,18 +12,14 @@ import {
     useId,
 } from "@fluentui/react-components";
 import type { ComboboxProps } from "@fluentui/react-components";
-import { GetAllSiteUsersSSO, getAllUsersSSO, getSearchUser } from "../../helpers/sso-helper";
+import { GetAllSiteUsersSSO, UpdateRequestSSO, getAllUsersSSO, getSearchUser } from "../../helpers/sso-helper";
 import { DatePicker, DayOfWeek, DefaultButton, DetailsList, Dialog, DialogFooter, IColumn, Panel, Pivot, PivotItem, PrimaryButton, SelectionMode, TextField, Toggle, TooltipHost, defaultDatePickerStrings } from "@fluentui/react";
 import { SectionAssignment } from "./ISectionAssignment";
 import ShowADUserComponent from "./CustomPicker";
 import { contributorFormColumns, dialogContentProps, gridFormColumns, gridFormDoneColumn } from "../../constants/SectionFormGridCont";
 import ContributorDialog from "./ContributorDIalogContent";
 import { formatSectionName, mergeADSPUsers, onFormatDate } from "../../utilities/utility";
-
-
-const MyComponent = () => {
-    return <div></div>;
-};
+import * as appConst from "../../constants/appConst";
 
 export interface IProps extends ComboboxProps {
     isReadOnlyForm: boolean;
@@ -43,8 +39,8 @@ export class SectionFormGrid extends Component<IProps, IState> {
         super(props);
         this.state = {
             contributorPanelId: null,
-            tempContributors: null,
-            allADUsers: null
+            tempContributors: [],
+            allADUsers: []
         };
     }
 
@@ -61,23 +57,33 @@ export class SectionFormGrid extends Component<IProps, IState> {
     }
 
 
-    // public updatePeopleCB = (selectedSectionNumber, propValObj) => {
-    //     this.updateParentSectionState(selectedSectionNumber, propValObj);
-    // }
     public updateParentSectionState = (selectedSectionNumber, propValObj) => {
         // let tempSectionItem = { ...this.props.sections };
-        let tempSectionItem = this.props.sections.map(item => {
+        let tempSectionItems = this.props.sections.map(item => {
             let updatedItem = { ...item };
             if (item.SectionNumber == selectedSectionNumber)
                 updatedItem = { ...updatedItem, ...propValObj };
             return updatedItem;
         });
-        this.props.updateParentSectionState(tempSectionItem);
+        this.props.updateParentSectionState(tempSectionItems);
     }
-    public updateContributors = () => {
-        //update contributors in props
-        this.setState({ contributorPanelId: null, tempContributors: null });
+    public saveContributors = () => {
+        let tempSectionItems = [...this.props.sections]
+        tempSectionItems[this.state.contributorPanelId].Contributors = this.state.tempContributors;
+        this.setState({ contributorPanelId: null, tempContributors: [] },()=>{
+            this.props.updateParentSectionState(tempSectionItems);
+        });
     }
+    // public updateContributors = async () => {
+    //     const contributorPanelSectionInfo: SectionAssignment[] = this.props.sections.filter((item, index) => { return index == this.state.contributorPanelId });
+    //     const constributorsId = contributorPanelSectionInfo[0].Contributors.map(contributor=>`${contributor.ContributorID}`);
+    //     let response: any = await UpdateRequestSSO({ContributorsId:{ "results": constributorsId }}, contributorPanelSectionInfo[0].itemID,appConst.lists.assigneeDetails);
+    //     if (!response) {
+    //         throw new Error("Middle tier didn't respond");
+    //     } else if (response.claims) {
+    //         console.log("data saved");
+    //     }
+    // }
 
 
     public renderGridItems = (item: SectionAssignment, index: number, column: IColumn) => {
@@ -124,15 +130,15 @@ export class SectionFormGrid extends Component<IProps, IState> {
                     strings={defaultDatePickerStrings}
                 />
             };
-            // case 'Contributors': {
-            //     return <span>{item.Contributor.join(", ")}</span>
-            // };
+            case 'Contributors': {
+                return <span>{item.Contributors.map(contributor=>contributor.ContributorDisplayName).join(", ")}</span>
+            };
             case 'ManageContributors': {
-                return this.props.isReadOnlyForm ? <DefaultButton
+                return !this.props.isReadOnlyForm ? <DefaultButton
                     style={{ color: "#000", backgroundColor: "white" }}
                     text="Manage"
                     onClick={() => {
-                        this.setState({ contributorPanelId: index });
+                        this.setState({ contributorPanelId: index,tempContributors:item.Contributors });
                     }}
                 /> : null;
             };
@@ -152,30 +158,16 @@ export class SectionFormGrid extends Component<IProps, IState> {
                     selectionMode={SelectionMode.none}
                     compact={true}
                 ></DetailsList>
-                {/* <Dialog
-                    hidden={this.state.contributorPanelId == null}
-                    onDismiss={() => { this.setState({ contributorPanelId: null, tempContributors: null }) }}
-                    dialogContentProps={dialogContentProps}
-                // modalProps={{isBlocking: false}}
-                >
-                    {this.state.contributorPanelId != null && <ContributorDialog contributors={this.props.sections.map((item, index) => { return index == this.state.contributorPanelId })} updateParentContributorState={this.updateContributorState}></ContributorDialog>}
-                    <DialogFooter>
-                        <PrimaryButton onClick={this.updateContributors} text="Ok" />
-                        <DefaultButton onClick={() => {
-                            this.setState({ contributorPanelId: null, tempContributors: null });
-                        }} text="Cancel" />
-                    </DialogFooter>
-                </Dialog> */}
                 <Panel
                     isOpen={this.state.contributorPanelId != null}
-                    onDismiss={() => { this.setState({ contributorPanelId: null, tempContributors: null }) }}
+                    onDismiss={() => { this.setState({ contributorPanelId: null, tempContributors: [] }) }}
                     headerText="Panel with footer at bottom"
                     closeButtonAriaLabel="Close"
                     onRenderFooterContent={() => {
                         return <div>
-                            <PrimaryButton onClick={this.updateContributors} text="Ok" />
+                            <PrimaryButton onClick={this.saveContributors} text="Ok" />
                             <DefaultButton onClick={() => {
-                                this.setState({ contributorPanelId: null, tempContributors: null });
+                                this.setState({ contributorPanelId: null, tempContributors: [] });
                             }} text="Cancel" />
                         </div>
                     }}
@@ -185,12 +177,15 @@ export class SectionFormGrid extends Component<IProps, IState> {
                 >
                     {this.state.contributorPanelId != null &&
                         <ContributorDialog
+                            contributorPanelId={this.state.contributorPanelId}
                             sectionInfo={contributorPanelSectionInfo ? contributorPanelSectionInfo[0] : null}
-                            updateParentContributorState={this.updateContributors}
+                            updateParentContributorState={(tempContributors) => {
+                                this.setState({tempContributors: tempContributors })
+                            }}
                             isReadOnlyForm={this.props.isReadOnlyForm}
                             tempContributors={this.state.tempContributors}
                             allADUsers={this.state.allADUsers}
-                            // updateParentSectionState={this.props.updateParentSectionState}
+                        // updateParentSectionState={this.props.updateParentSectionState}
                         ></ContributorDialog>
                     }
                 </Panel>
