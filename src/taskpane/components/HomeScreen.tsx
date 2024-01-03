@@ -17,7 +17,7 @@ import { SectionAssignment } from "./ISectionAssignment";
 import SectionFormComponent from "./SectionForm";
 import FullFormComponent from "./FullForm";
 import SectionDetails from "./SectionDetails";
-import * as appConst from "../../constants/appConst"
+import * as appConst from "../../constants/appConst";
 
 const MyComponent = () => {
   return <div></div>;
@@ -116,7 +116,7 @@ export class HomeScreenComponent extends Component<IProps, IState> {
   }
   public GetSPDocDetails = async (docGUID) => {
     const filter = `DocumentID eq '${docGUID}'`;
-    let response = await GetSPListData("InvestCorpDocumentDetails", "*", "", filter);
+    let response = await GetSPListData(appConst.lists.documentDetails, "*", "", filter);
     const result = JSON.parse(response);
     let docDetails = {};
     if (!response) {
@@ -128,7 +128,7 @@ export class HomeScreenComponent extends Component<IProps, IState> {
   }
   public GetSPAssigneeData = async (docGUID) => {
     const filter = `DocumentID eq '` + docGUID + `' and IsActive eq 1`;
-    let response: any = await GetSPListData("InvestcorpDocumentAssignees", "*,PrimaryOwner/Title,SecondaryOwner/Title", "PrimaryOwner,SecondaryOwner", filter);
+    let response: any = await GetSPListData(appConst.lists.assigneeDetails, "*,PrimaryOwner/Title,SecondaryOwner/Title", "PrimaryOwner,SecondaryOwner", filter);
     const result = JSON.parse(response);
     let sectionInfo = [];
     if (!response) {

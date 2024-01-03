@@ -7,7 +7,7 @@ import { CreateRequestSSO, GetSPDataSSO, GetSPDocSSO, UpdateRequestSSO } from ".
 import { FlagPrideIntersexInclusiveProgress20Filled } from "@fluentui/react-icons";
 import SectionFormGrid from "./SectionFormGrid";
 import { onFormatDate } from "../../utilities/utility";
-
+import * as appConst from "../../constants/appConst";
 
 const MyComponent = () => {
     return <div></div>;
@@ -262,11 +262,11 @@ export class FullFormComponent extends Component<IProps, IState> {
             DueDate: this.state.docDueDate,
             ShouldFreezeDoc: true
         };
-        CreateRequestSSO("InvestCorpDocumentDetails", docDetailsItem);
+        CreateRequestSSO(appConst.lists.documentDetails, docDetailsItem);
         const mappedSections = this.mapSectionRowToItem(this.state.Sections);
         await Promise.all(
             mappedSections.map(async (section, index) => {
-                let response: any = await CreateRequestSSO("InvestcorpDocumentAssignees", section);
+                let response: any = await CreateRequestSSO(appConst.lists.assigneeDetails, section);
                 if (!response) {
                     throw new Error("Middle tier didn't respond");
                 } else if (response.claims) {
@@ -313,7 +313,7 @@ export class FullFormComponent extends Component<IProps, IState> {
             SectionID: "ABC123",
             DocumentID: this.props.docGUID
         }
-        let response: any = await UpdateRequestSSO(createItem, itemID, 'InvestcorpDocumentAssignees');
+        let response: any = await UpdateRequestSSO(createItem, itemID,appConst.lists.assigneeDetails);
         if (!response) {
             throw new Error("Middle tier didn't respond");
         } else if (response.claims) {
@@ -325,7 +325,7 @@ export class FullFormComponent extends Component<IProps, IState> {
         let createItem = {
             IsActive: FlagPrideIntersexInclusiveProgress20Filled
         }
-        let response: any = await UpdateRequestSSO(createItem, itemID,'InvestcorpDocumentAssignees');
+        let response: any = await UpdateRequestSSO(createItem, itemID,appConst.lists.assigneeDetails);
         if (!response) {
             throw new Error("Middle tier didn't respond");
         } else if (response.claims) {

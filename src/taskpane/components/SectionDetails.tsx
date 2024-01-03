@@ -2,6 +2,8 @@ import React, { Component, ReactElement } from "react";
 import type { ComboboxProps } from "@fluentui/react-components";
 import { DefaultButton, DetailsList, IColumn } from "@fluentui/react";
 import { UpdateRequestSSO, GetSPListData } from "../../helpers/sso-helper";
+import * as appConst from "../../constants/appConst";
+
 export interface IProps extends ComboboxProps {
     sectionInfo: any[];
     documentID: string;
@@ -53,11 +55,11 @@ export class SectionDetails extends Component<IProps> {
     }
     private sendMail = async () => {
         const query = `$select=*&$filter=DocumentID eq '${this.props.documentID}'&$top=1&$orderby=Modified desc`
-        const documentDetails = await GetSPListData("InvestCorpDocumentDetails", "*", "", query);
+        const documentDetails = await GetSPListData(appConst.lists.documentDetails, "*", "", query);
         const result = JSON.parse(documentDetails);
         const ItemID = documentDetails ? result.d.results[0]["Id"] : 0;
         const updateDetails = { SendReport: true, SendReportToEmailAddr: this.props.currentUserEmail }
-        await UpdateRequestSSO(updateDetails, ItemID, 'InvestCorpDocumentDetails');
+        await UpdateRequestSSO(updateDetails, ItemID,appConst.lists.documentDetails);
     }
     public render(): ReactElement<IProps> {
         return (
