@@ -276,7 +276,7 @@ export async function GetSPDataSSO(querytext: string, callback): Promise<void> {
     // }
   }
 }
-export async function CreateRequestSSO(listName:string,createItem:any): Promise<void> {
+export async function CreateRequestSSO(listName:string,createItem:any): Promise<any> {
   try {
     let middletierToken: string =
       _middletierToken !== ""

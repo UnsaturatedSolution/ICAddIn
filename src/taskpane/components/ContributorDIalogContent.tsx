@@ -20,7 +20,6 @@ import { contributorFormColumns, dialogContentProps, gridFormColumns } from "../
 
 
 export interface IProps extends ComboboxProps {
-    // contributors: any[];
     contributorPanelId: number;
     updateParentContributorState: Function;
     isReadOnlyForm: boolean;
@@ -49,7 +48,6 @@ export class ContributorDialog extends Component<IProps, IState> {
         switch (column.key) {
             case 'Contributor': {
                 return <span id={item.ContributorID}>{item.ContributorDisplayName}</span>
-                // return <span id={item.ContributorID}>{item.ContributorDisplayName}</span>
             };
             case 'Action': {
                 return <DefaultButton
@@ -76,13 +74,17 @@ export class ContributorDialog extends Component<IProps, IState> {
                     <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} sectionInfo={this.props.sectionInfo} allADUsers={this.props.allADUsers} updatePeopleCB={this.updateContributorState} sectionNumber={this.props.contributorPanelId} fieldState={"Contributor"} fieldName="" isMandatory={false}></ShowADUserComponent>
                 </div>
                 <div className={`ms-Grid-col ms-sm12`} style={{ paddingBottom: 10 }}>
-                    <DetailsList
+                    {this.props.tempContributors && this.props.tempContributors.length > 0 ? <DetailsList
                         columns={contributorFormColumns}
                         items={this.props.tempContributors}
                         onRenderItemColumn={this.renderGridItems}
                         selectionMode={SelectionMode.none}
                         compact={true}
-                    ></DetailsList>
+                    ></DetailsList> :
+                        <>
+                            <p>No Contributors added.</p>
+                            <p>Please select as required.</p>
+                        </>}
                 </div>
             </div>
         );

@@ -9,13 +9,22 @@ export const gridFormDoneColumn:IColumn[]=[
     maxWidth: 50,
   }
 ];
+export const gridFormManageColumn:IColumn[]=[
+  {
+    key: 'ManageContributors',
+    name: 'Manage Contributors',
+    fieldName: 'ManageContributors',
+    minWidth: 75,
+    maxWidth: 75,
+  }
+];
 export const gridFormColumns: IColumn[] = [
     {
       key: 'SNo',
       name: 'S/N',
       fieldName: 'SNo',
-      minWidth: 50,
-      maxWidth: 50,
+      minWidth: 30,
+      maxWidth: 30,
     },
     {
       key: 'Section',
@@ -42,8 +51,8 @@ export const gridFormColumns: IColumn[] = [
       key: 'TargetDate',
       name: 'Target Date',
       fieldName: 'TargetDate',
-      minWidth: 75,
-      maxWidth: 75,
+      minWidth: 100,
+      maxWidth: 100,
     },
     {
       key: 'Contributors',
@@ -52,13 +61,7 @@ export const gridFormColumns: IColumn[] = [
       minWidth: 75,
       maxWidth: 75,
     },
-    {
-      key: 'ManageContributors',
-      name: 'Manage Contributors',
-      fieldName: 'ManageContributors',
-      minWidth: 75,
-      maxWidth: 75,
-    },
+    
 ]
 export const contributorFormColumns: IColumn[] = [
     {

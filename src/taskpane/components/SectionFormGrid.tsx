@@ -1,22 +1,10 @@
 import React, { Component, ReactElement } from "react";
-import {
-    Combobox,
-    Label,
-    Option,
-    Persona,
-    SelectTabData,
-    SelectTabEvent,
-    Tab,
-    TabList,
-    TabValue,
-    useId,
-} from "@fluentui/react-components";
 import type { ComboboxProps } from "@fluentui/react-components";
 import { GetAllSiteUsersSSO, UpdateRequestSSO, getAllUsersSSO, getSearchUser } from "../../helpers/sso-helper";
 import { DatePicker, DayOfWeek, DefaultButton, DetailsList, Dialog, DialogFooter, IColumn, Panel, Pivot, PivotItem, PrimaryButton, SelectionMode, TextField, Toggle, TooltipHost, defaultDatePickerStrings } from "@fluentui/react";
 import { SectionAssignment } from "./ISectionAssignment";
 import ShowADUserComponent from "./CustomPicker";
-import { contributorFormColumns, dialogContentProps, gridFormColumns, gridFormDoneColumn } from "../../constants/SectionFormGridCont";
+import { contributorFormColumns, dialogContentProps, gridFormColumns, gridFormDoneColumn, gridFormManageColumn } from "../../constants/SectionFormGridCont";
 import ContributorDialog from "./ContributorDIalogContent";
 import { formatSectionName, mergeADSPUsers, onFormatDate } from "../../utilities/utility";
 import * as appConst from "../../constants/appConst";
@@ -24,7 +12,9 @@ import * as appConst from "../../constants/appConst";
 export interface IProps extends ComboboxProps {
     isReadOnlyForm: boolean;
     sections: SectionAssignment[];
+    forceResetGrid: boolean;
     updateParentSectionState: Function;
+
 }
 
 export interface IState {
@@ -58,7 +48,6 @@ export class SectionFormGrid extends Component<IProps, IState> {
 
 
     public updateParentSectionState = (selectedSectionNumber, propValObj) => {
-        // let tempSectionItem = { ...this.props.sections };
         let tempSectionItems = this.props.sections.map(item => {
             let updatedItem = { ...item };
             if (item.SectionNumber == selectedSectionNumber)
@@ -70,27 +59,16 @@ export class SectionFormGrid extends Component<IProps, IState> {
     public saveContributors = () => {
         let tempSectionItems = [...this.props.sections]
         tempSectionItems[this.state.contributorPanelId].Contributors = this.state.tempContributors;
-        this.setState({ contributorPanelId: null, tempContributors: [] },()=>{
+        this.setState({ contributorPanelId: null, tempContributors: [] }, () => {
             this.props.updateParentSectionState(tempSectionItems);
         });
     }
-    // public updateContributors = async () => {
-    //     const contributorPanelSectionInfo: SectionAssignment[] = this.props.sections.filter((item, index) => { return index == this.state.contributorPanelId });
-    //     const constributorsId = contributorPanelSectionInfo[0].Contributors.map(contributor=>`${contributor.ContributorID}`);
-    //     let response: any = await UpdateRequestSSO({ContributorsId:{ "results": constributorsId }}, contributorPanelSectionInfo[0].itemID,appConst.lists.assigneeDetails);
-    //     if (!response) {
-    //         throw new Error("Middle tier didn't respond");
-    //     } else if (response.claims) {
-    //         console.log("data saved");
-    //     }
-    // }
-
 
     public renderGridItems = (item: SectionAssignment, index: number, column: IColumn) => {
         const fieldValue = item[column.fieldName];
         switch (column.key) {
             case 'Done': {
-                return <Toggle checked={false} />
+                return <Toggle />
             };
             case 'SNo': {
                 return <span>{item.SectionNumber}</span>
@@ -102,48 +80,86 @@ export class SectionFormGrid extends Component<IProps, IState> {
                     calloutProps={{ gapSpace: 0 }}
                     styles={{ root: { display: 'inline-block' } }}
                 >
-                    <span aria-describedby={"SectionName"}>{`${formatSectionName(item.SectionName)}`}</span>
+                    <span style={{ whiteSpace: "break-spaces" }} aria-describedby={"SectionName"}>{`${formatSectionName(item.SectionName)}`}</span>
                 </TooltipHost>
             };
             case 'Primary': {
-                return <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"POwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
+                return <TooltipHost
+                    content={item.POwnerDisplayName}
+                    id={"PrimaryOwner"}
+                    calloutProps={{ gapSpace: 0 }}
+                    styles={{ root: { display: 'inline-block', width: "100%" } }}
+                >
+                    {!this.props.isReadOnlyForm ?
+                        <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} forceResetGrid={this.props.forceResetGrid} sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"POwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
+                        : <span>{item.POwnerDisplayName}</span>}
+                </TooltipHost>
             };
             case 'Secondary': {
-                return <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"SOwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
+                return <TooltipHost
+                    content={item.SOwnerDisplayName}
+                    id={"SecondaryOwner"}
+                    calloutProps={{ gapSpace: 0 }}
+                    styles={{ root: { display: 'inline-block', width: "100%" } }}
+                >
+                    {!this.props.isReadOnlyForm ?
+                        <ShowADUserComponent isReadOnlyForm={this.props.isReadOnlyForm} forceResetGrid={this.props.forceResetGrid} sectionInfo={item} allADUsers={this.state.allADUsers} updatePeopleCB={this.updateParentSectionState} sectionNumber={item.SectionNumber} fieldState={"SOwner"} fieldName="" isMandatory={true}></ShowADUserComponent>
+                        : <span>{item.SOwnerDisplayName}</span>}
+                </TooltipHost>
             };
             case 'TargetDate': {
-                return <DatePicker
-                    disabled={this.props.isReadOnlyForm}
-                    firstDayOfWeek={DayOfWeek.Sunday}
-                    firstWeekOfYear={1}
-                    showMonthPickerAsOverlay={true}
-                    placeholder="Select a date..."
-                    ariaLabel="Select a date"
-                    formatDate={onFormatDate}
-                    value={item.DeadLineDate}
-                    onSelectDate={(date) => {
-                        // let tempSectionItem = { ...this.props.sectionInfo };
-                        // tempSectionItem.DeadLineDate = date;
-                        this.updateParentSectionState(item.SectionNumber, { ...item, ...{ "DeadLineDate": date } })
-                    }}
-                    // DatePicker uses English strings by default. For localized apps, you must override this prop.
-                    strings={defaultDatePickerStrings}
-                />
+                return <TooltipHost
+                    content={onFormatDate(item.DeadLineDate)}
+                    id={"DeadLineDate"}
+                    calloutProps={{ gapSpace: 0 }}
+                    styles={{ root: { display: 'inline-block' } }}
+                >
+                    <DatePicker
+                        disabled={this.props.isReadOnlyForm}
+                        firstDayOfWeek={DayOfWeek.Sunday}
+                        firstWeekOfYear={1}
+                        showMonthPickerAsOverlay={true}
+                        placeholder="Select a date..."
+                        ariaLabel="Select a date"
+                        formatDate={onFormatDate}
+                        value={item.DeadLineDate}
+                        onSelectDate={(date) => {
+                            this.updateParentSectionState(item.SectionNumber, { ...item, ...{ "DeadLineDate": date } })
+                        }}
+                        strings={defaultDatePickerStrings}
+                    />
+                </TooltipHost>
             };
             case 'Contributors': {
-                return <span>{item.Contributors.map(contributor=>contributor.ContributorDisplayName).join(", ")}</span>
+                return <TooltipHost
+                    content={item.Contributors.map(contributor => contributor.ContributorDisplayName).join(", ")}
+                    id={"Contributors"}
+                    calloutProps={{ gapSpace: 0 }}
+                    styles={{ root: { display: 'inline-block' } }}
+                >
+                    <span style={{ whiteSpace: "break-spaces" }}>{item.Contributors.map(contributor => contributor.ContributorDisplayName).join(", ")}</span>
+                </TooltipHost>
+
             };
             case 'ManageContributors': {
                 return !this.props.isReadOnlyForm ? <DefaultButton
                     style={{ color: "#000", backgroundColor: "white" }}
                     text="Manage"
                     onClick={() => {
-                        this.setState({ contributorPanelId: index,tempContributors:item.Contributors });
+                        this.setState({ contributorPanelId: index, tempContributors: item.Contributors });
                     }}
                 /> : null;
             };
             default: {
-                return <span>{fieldValue}</span>
+                return <TooltipHost
+                    content={fieldValue}
+                    id={column.key}
+                    calloutProps={{ gapSpace: 0 }}
+                    styles={{ root: { display: 'inline-block' } }}
+                >
+                    <span>{fieldValue}</span>
+                </TooltipHost>
+
             }
         }
     }
@@ -152,7 +168,7 @@ export class SectionFormGrid extends Component<IProps, IState> {
         return (
             <div className={`ms-Grid-col ms-sm12`}>
                 <DetailsList
-                    columns={this.props.isReadOnlyForm ? [...gridFormDoneColumn, ...gridFormColumns] : gridFormColumns}
+                    columns={this.props.isReadOnlyForm ? [...gridFormDoneColumn, ...gridFormColumns] : [...gridFormColumns, ...gridFormManageColumn]}
                     items={this.props.sections}
                     onRenderItemColumn={this.renderGridItems}
                     selectionMode={SelectionMode.none}
@@ -161,18 +177,16 @@ export class SectionFormGrid extends Component<IProps, IState> {
                 <Panel
                     isOpen={this.state.contributorPanelId != null}
                     onDismiss={() => { this.setState({ contributorPanelId: null, tempContributors: [] }) }}
-                    headerText="Panel with footer at bottom"
+                    headerText="Manage Contributors"
                     closeButtonAriaLabel="Close"
                     onRenderFooterContent={() => {
                         return <div>
-                            <PrimaryButton onClick={this.saveContributors} text="Ok" />
+                            <PrimaryButton style={{ paddingRight: "10px" }} onClick={this.saveContributors} text="OK" />
                             <DefaultButton onClick={() => {
                                 this.setState({ contributorPanelId: null, tempContributors: [] });
                             }} text="Cancel" />
                         </div>
                     }}
-                    // Stretch panel content to fill the available height so the footer is positioned
-                    // at the bottom of the page
                     isFooterAtBottom={true}
                 >
                     {this.state.contributorPanelId != null &&
@@ -180,41 +194,14 @@ export class SectionFormGrid extends Component<IProps, IState> {
                             contributorPanelId={this.state.contributorPanelId}
                             sectionInfo={contributorPanelSectionInfo ? contributorPanelSectionInfo[0] : null}
                             updateParentContributorState={(tempContributors) => {
-                                this.setState({tempContributors: tempContributors })
+                                this.setState({ tempContributors: tempContributors })
                             }}
                             isReadOnlyForm={this.props.isReadOnlyForm}
                             tempContributors={this.state.tempContributors}
                             allADUsers={this.state.allADUsers}
-                        // updateParentSectionState={this.props.updateParentSectionState}
                         ></ContributorDialog>
                     }
                 </Panel>
-                {/* <h3>{`Section ${this.props.sectionInfo.SectionNumber}`}</h3>
-                <div>
-                    <ShowADUserComponent fieldName="Primary Owner" isMandatory={true}></ShowADUserComponent>
-                </div>
-                <div>
-                    <ShowADUserComponent fieldName="Secondary Owner" isMandatory={true}></ShowADUserComponent>
-                </div>
-                <div>
-                    <ShowADUserComponent fieldName="Contributor(s)" isMandatory={false}></ShowADUserComponent>
-                </div>
-                <div>
-                    <DatePicker
-                        label={"Target Date"}
-                        firstDayOfWeek={DayOfWeek.Sunday}
-                        firstWeekOfYear={1}
-                        showMonthPickerAsOverlay={true}
-                        placeholder="Select a date..."
-                        ariaLabel="Select a date"
-                        onSelectDate={(date) => {
-                            let tempSectionItem = { ...this.props.sectionInfo };
-                            tempSectionItem.DeadLineDate = date;
-                        }}
-                        // DatePicker uses English strings by default. For localized apps, you must override this prop.
-                        strings={defaultDatePickerStrings}
-                    />
-                </div> */}
             </div >
         );
     }

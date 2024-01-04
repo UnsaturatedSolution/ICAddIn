@@ -19,9 +19,6 @@ import FullFormComponent from "./FullForm";
 import SectionDetails from "./SectionDetails";
 import * as appConst from "../../constants/appConst";
 
-const MyComponent = () => {
-  return <div></div>;
-};
 
 export interface IProps extends ComboboxProps {
   officeContext: any;
@@ -29,8 +26,6 @@ export interface IProps extends ComboboxProps {
 
 export interface IState {
   docGUID: string;
-  // options: any[];
-  // Sections: SectionAssignment[];
   SectionsDetails: any[];
   mappedSectionInfo: any[];
   docInfo: any;
@@ -46,39 +41,8 @@ export class HomeScreenComponent extends Component<IProps, IState> {
       mappedSectionInfo: [],
       docInfo: {},
       currentUserEmail: ""
-      // options: [],
-      // Sections: [],
     };
   }
-  // componentDidMount(): void {
-  //   this.syncSection();
-  // }
-  // public syncSection = async () => {
-  //   await Word.run(async (context) => {
-  //     const secs = context.document.sections;
-  //     const docProps = context.document.properties;
-  //     context.load(docProps);
-  //     context.load(docProps.customProperties);
-  //     context.load(secs);
-  //     await context.sync();
-  //     console.log(secs.toJSON().items);
-  //     let Items = [];
-  //     await Promise.all(
-  //       secs.toJSON().items.map(async (section, index) => {
-  //         Items.push({
-  //           SectionNumber: index + 1,
-  //           POwnerID: 0,
-  //           POwnerEmail: "",
-  //           SOwnerID: 0,
-  //           SOwnerEmail: "",
-  //           Contributor: [],
-  //           DeadLineDate: new Date(),
-  //         });
-  //       })
-  //     );
-  //     this.setState({ Sections: Items });
-  //   });
-  // };
   async componentDidMount(): Promise<void> {
     let tempState = { ...this.state };
     const currEmail = await this.currentUserDetails();
@@ -95,6 +59,9 @@ export class HomeScreenComponent extends Component<IProps, IState> {
       tempState = { ...tempState, ...{ SectionsDetails: sectionInfo, mappedSectionInfo: sortedSectionInfo } };
     }
     this.setState(tempState);
+  }
+  public updateDocInfo=(docInfoObj)=>{
+    this.setState({docInfo:{...this.state.docInfo,...docInfoObj}});
   }
   public mapSectionItemToRow = (sectionInfo, docGUID) => {
     return sectionInfo.map((item, index) => {
@@ -150,16 +117,13 @@ export class HomeScreenComponent extends Component<IProps, IState> {
   public getDocumentMetadata = async () => {
     let fileURL = this.props.officeContext.document.url;
     if (fileURL.indexOf('sharepoint.com') > -1) {
-      // let docName = fileURL.split('/')[fileURL.split('/').length - 1];
       let serverRelativeUrl = fileURL.split(appConst.webUrl)[fileURL.split(appConst.webUrl).length - 1];
 
       let response: any = await GetSPDocSSO(serverRelativeUrl, {});
-      // console.log(response);
       let docGUID = "";
       if (!response) {
         throw new Error("Middle tier didn't respond");
       } else {
-        // this.setState({ docGUID: JSON.parse(response).d.UniqueId }, () => { this.GetSPData() });
         docGUID = JSON.parse(response).d.UniqueId;
       }
       return docGUID;
@@ -186,11 +150,9 @@ export class HomeScreenComponent extends Component<IProps, IState> {
       <div style={{ backgroundColor: "lightgrey" }}>
         <Pivot>
           <PivotItem headerText="Section Content">
-            {/* <div className="UserDashboard">"Tab1"</div> */}
-            <FullFormComponent officeContext={this.props.officeContext} sectionInfo={this.state.mappedSectionInfo} docGUID={this.state.docGUID} docInfo={this.state.docInfo} />
+            <FullFormComponent officeContext={this.props.officeContext} sectionInfo={this.state.mappedSectionInfo} docGUID={this.state.docGUID} docInfo={this.state.docInfo} updateDocInfo={this.updateDocInfo} />
           </PivotItem>
           <PivotItem linkText="Document Status">
-            {/*  <div className="UserDashboard">"Tab2"</div> */}
             <SectionDetails
               sectionInfo={this.state.SectionsDetails}
               documentID={this.state.docGUID}

@@ -16,12 +16,15 @@ export interface IProps extends ComboboxProps {
   sectionInfo: any;
   isMandatory: boolean;
   sectionNumber: number;
+  forceResetGrid?: boolean;
   updatePeopleCB: Function;
   allADUsers: any[];
 }
 
 export interface IState {
   options: any[];
+  pplValue: string;
+  selectedOptions: any[];
 }
 
 const options = [
@@ -37,7 +40,17 @@ export class ShowADUserComponent extends Component<IProps, IState> {
 
     this.state = {
       options: this.props.allADUsers,
+      pplValue: this.props.fieldState == "Contributor" ? "" : this.props.sectionInfo[`${this.props.fieldState}DisplayName`],
+      selectedOptions: this.props.fieldState == "Contributor" ? [] : [this.props.sectionInfo[`${this.props.fieldState}ID`]]
     };
+  }
+  public componentDidUpdate(prevProps: Readonly<IProps>, prevState: Readonly<IState>, snapshot?: any): void {
+    if ((prevProps.forceResetGrid != this.props.forceResetGrid) && this.props.forceResetGrid) {
+      this.setState({
+        pplValue: this.props.fieldState == "Contributor" || this.props.forceResetGrid ? "" : this.props.sectionInfo[`${this.props.fieldState}DisplayName`],
+        selectedOptions: this.props.fieldState == "Contributor" || this.props.forceResetGrid ? [] : [this.props.sectionInfo[`${this.props.fieldState}ID`]]
+      });
+    }
   }
   private onComboBoxChange: ComboboxProps["onChange"] = (event) => {
     const changedText = event.target.value.trim();
@@ -48,34 +61,33 @@ export class ShowADUserComponent extends Component<IProps, IState> {
         }
       });
       console.log(searchedUsers);
-      this.setState({ options: searchedUsers });
-      // getSearchUser(changedText, (result: any) => {
-      //   this.setState({ options: result.value });
-      //   console.log(result);
-      // });
+      this.setState({ options: searchedUsers, pplValue: changedText });
     } else {
-      this.setState({ options: [] });
+      this.setState({ options: [], pplValue: changedText });
     }
-    // const matches = options.filter((option) => option.toLowerCase().indexOf(value.toLowerCase()) === 0);
-    // setMatchingOptions(matches);
   };
   private oncomboBoxSelect = (data) => {
     if (data.selectedOptions.length > 0) {
 
-      console.log(data);
+
       if (this.props.fieldState == "Contributor") {
-        this.props.updatePeopleCB({
-          ContributorDisplayName: data.optionText,
-          ContributorID: data.optionValue
+        this.setState({ options: this.props.allADUsers, selectedOptions: [], pplValue: "" }, () => {
+          this.props.updatePeopleCB({
+            ContributorDisplayName: data.optionText,
+            ContributorID: data.optionValue
+          });
         });
       }
       else {
-        let updatedObj= {};
-        updatedObj[`${this.props.fieldState}DisplayName`] = data.optionText;
-        updatedObj[`${this.props.fieldState}ID`] = data.optionValue;
-        this.props.updatePeopleCB(this.props.sectionNumber, updatedObj);
+        this.setState({ selectedOptions: [data.optionValue], pplValue: data.optionText }, () => {
+          let updatedObj = {};
+          updatedObj[`${this.props.fieldState}DisplayName`] = data.optionText;
+          updatedObj[`${this.props.fieldState}ID`] = data.optionValue;
+          this.props.updatePeopleCB(this.props.sectionNumber, updatedObj);
+        });
       }
     }
+
   }
 
   public render(): ReactElement<IProps> {
@@ -84,38 +96,22 @@ export class ShowADUserComponent extends Component<IProps, IState> {
         {this.props.fieldName != "" && <Label>{this.props.fieldName}</Label>
         }
         {this.props.fieldName != "" && this.props.isMandatory && <span style={{ color: "red" }}>*</span>}
-        {this.props.fieldState == "Contributor" ?
-          <Combobox
-            disabled={this.props.isReadOnlyForm}
-            freeform
-            onChange={this.onComboBoxChange}
-            style={{ width: "100%" }}
-            // required={this.props.isMandatory}
-            onOptionSelect={(event, data) => this.oncomboBoxSelect(data)}
-          >
-            {this.state.options.map((option, index) => (
-              <Option text={option.displayName} value={option.SPUSerId} key={index}>
-                <Persona avatar={{ color: "colorful", "aria-hidden": true }} name={option.displayName} />
-              </Option>
-            ))}
-          </Combobox> :
-          <Combobox
-            disabled={this.props.isReadOnlyForm}
-            freeform
-            onChange={this.onComboBoxChange}
-            style={{ width: "100%" }}
-            // required={this.props.isMandatory}
-            onOptionSelect={(event, data) => this.oncomboBoxSelect(data)}
-            // value={this.props.sectionInfo[`${this.props.fieldState}DisplayName`]}
-            selectedOptions={[this.props.sectionInfo[`${this.props.fieldState}ID`]]}
-          >
-            {this.state.options.map((option, index) => (
-              <Option text={option.displayName} value={option.SPUSerId} key={index}>
-                <Persona avatar={{ color: "colorful", "aria-hidden": true }} name={option.displayName} />
-              </Option>
-            ))}
-          </Combobox>
-        }
+
+        <Combobox
+          disabled={this.props.isReadOnlyForm}
+          freeform
+          onChange={this.onComboBoxChange}
+          style={{ width: "100%" }}
+          onOptionSelect={(event, data) => this.oncomboBoxSelect(data)}
+          value={this.state.pplValue}
+          selectedOptions={this.state.selectedOptions}
+        >
+          {this.state.options.map((option, index) => (
+            <Option text={option.displayName} value={option.SPUSerId} key={index}>
+              <Persona avatar={{ color: "colorful", "aria-hidden": true }} name={option.displayName} />
+            </Option>
+          ))}
+        </Combobox>
       </div>
     );
   }

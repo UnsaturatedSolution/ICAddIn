@@ -1,6 +1,11 @@
+import moment from 'moment';
+
 export const onFormatDate = (date?: Date): string => {
-    return !date ? '' : date.getDate() + '/' + (date.getMonth() + 1) + '/' + (date.getFullYear() % 100);
+    return !date ? '' : moment(date).format('MM/DD/YYYY');
 };
+// export const onFormatDate = (date?: Date): string => {
+//     return !date ? '' : date.getDate() + '/' + (date.getMonth() + 1) + '/' + (date.getFullYear());
+// };
 
 export const formatSectionName = (text) => {
     if (text && text != "") {
