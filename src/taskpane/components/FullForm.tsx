@@ -82,7 +82,7 @@ export class FullFormComponent extends Component<IProps, IState> {
                 SectionName: item.SectionName ? item.SectionName : "",
                 PrimaryOwnerId: item.POwnerID ? item.POwnerID : 0,
                 SecondaryOwnerId: item.SOwnerID ? item.SOwnerID : 0,
-                Status: "NotStarted",
+                Status: "InProgress",
                 TargetDate: item.DeadLineDate ? new Date(item.DeadLineDate) : null,
                 DocumentID: item.DocumentID ? item.DocumentID : this.props.docGUID,
                 SectionID: item.SectionID ? item.SectionID : "",
